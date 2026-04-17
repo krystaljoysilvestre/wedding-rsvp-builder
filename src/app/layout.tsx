@@ -62,7 +62,7 @@ const cinzel = Cinzel({
 });
 
 export const metadata: Metadata = {
-  title: "Love, Coded — AI-Powered Wedding Website Creator",
+  title: "Coded with Love — AI-Powered Wedding Website Creator",
   description:
     "Build a cinematic, editorial-style wedding website through a conversational AI experience.",
 };
@@ -83,7 +83,7 @@ export default function RootLayout({
         h-full antialiased
       `}
     >
-      <body className="h-full overflow-hidden font-sans">{children}</body>
+      <body className="h-full font-sans">{children}</body>
     </html>
   );
 }

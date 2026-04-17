@@ -5,36 +5,38 @@ import type { ThemeConfig } from "@/lib/themes";
 import type { Viewport } from "./ViewportSwitcher";
 
 interface TemplateHeaderProps {
-  names?: string;
+  name1?: string;
+  name2?: string;
   date?: string;
+  logoImage?: string;
   theme: ThemeConfig;
   viewport: Viewport;
 }
 
 const NAV_LINKS = ["Our Story", "Details", "RSVP"];
 
-/**
- * Extract initials from "Name1 & Name2" → "N&N"
- * Handles single names, multiple words, etc.
- */
-function getInitials(names?: string): string {
-  if (!names) return "";
-  const parts = names.split(/\s*&\s*/);
-  return parts
-    .map((p) => p.trim().charAt(0).toUpperCase())
-    .filter(Boolean)
-    .join("&");
+function getInitials(name1?: string, name2?: string): string {
+  const a = name1?.trim().charAt(0).toUpperCase() ?? "";
+  const b = name2?.trim().charAt(0).toUpperCase() ?? "";
+  if (a && b) return `${a}&${b}`;
+  return a || b;
 }
 
 export default function TemplateHeader({
-  names,
+  name1,
+  name2,
   date,
+  logoImage,
   theme,
   viewport,
 }: TemplateHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = viewport === "mobile";
-  const initials = getInitials(names);
+  const initials = getInitials(name1, name2);
+  const fullName = name1 && name2 ? `${name1} & ${name2}` : name1 || name2;
+  const logoSize = isMobile ? 34 : 38;
+  const logoRadius =
+    theme.name === "minimal" ? 6 : theme.name === "cinematic" ? 0 : "50%";
 
   return (
     <header
@@ -51,17 +53,28 @@ export default function TemplateHeader({
           padding: isMobile ? "14px 16px" : "14px 32px",
         }}
       >
-        {/* Logo — initials monogram */}
+        {/* Logo — custom image, initials monogram, or heart fallback */}
         <div className="flex items-center" style={{ gap: isMobile ? 10 : 12 }}>
-          {initials ? (
+          {logoImage ? (
+            <img
+              src={logoImage}
+              alt="Logo"
+              className="flex-shrink-0 object-cover"
+              style={{
+                width: logoSize,
+                height: logoSize,
+                borderRadius: logoRadius,
+                border: `1.5px solid ${theme.accent}`,
+              }}
+            />
+          ) : initials ? (
             <div
               className="flex items-center justify-center"
               style={{
-                width: isMobile ? 34 : 38,
-                height: isMobile ? 34 : 38,
+                width: logoSize,
+                height: logoSize,
                 border: `1.5px solid ${theme.accent}`,
-                borderRadius:
-                  theme.name === "minimal" ? 6 : theme.name === "cinematic" ? 0 : "50%",
+                borderRadius: logoRadius,
                 flexShrink: 0,
               }}
             >
@@ -82,8 +95,8 @@ export default function TemplateHeader({
             <div
               className="flex items-center justify-center"
               style={{
-                width: isMobile ? 34 : 38,
-                height: isMobile ? 34 : 38,
+                width: logoSize,
+                height: logoSize,
                 border: `1.5px solid ${theme.border}`,
                 borderRadius: "50%",
                 flexShrink: 0,
@@ -105,7 +118,7 @@ export default function TemplateHeader({
           )}
 
           <div>
-            {names ? (
+            {fullName ? (
               <p
                 className="font-light tracking-tight"
                 style={{
@@ -114,7 +127,7 @@ export default function TemplateHeader({
                   fontSize: isMobile ? 14 : 16,
                 }}
               >
-                {names}
+                {fullName}
               </p>
             ) : (
               <p
@@ -125,7 +138,7 @@ export default function TemplateHeader({
                   fontSize: isMobile ? 14 : 16,
                 }}
               >
-                Love, Coded
+                Coded with Love
               </p>
             )}
             {date && (

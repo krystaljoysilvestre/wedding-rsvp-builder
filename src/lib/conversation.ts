@@ -27,10 +27,15 @@ export interface StepDef {
 
 const STEPS: Record<ConversationStep, StepDef> = {
   // Phase 1: Identity & vibe
-  names: {
+  name1: {
     message:
-      "How exciting — a love story in the making! Let's begin with the two hearts at the center of it all. What are your names?\n\ne.g. Krystal & Jom",
-    field: "names",
+      "How exciting — a love story in the making! Let's start with the first star of the show. What's your name, beautiful soul?",
+    field: "name1",
+  },
+  name2: {
+    message:
+      "And who's the lucky one who stole your heart? What's their name?",
+    field: "name2",
   },
   theme: {
     message:
@@ -190,14 +195,15 @@ const STEPS: Record<ConversationStep, StepDef> = {
   done: {
     message:
       "Your wedding website is ready, and it's absolutely stunning! Scroll through the preview to see your love story come to life. Feel free to keep chatting if you'd like to change anything.",
-    quickReplies: ["Change the theme", "Update the story"],
+    quickReplies: ["Upload our photos", "Change the theme", "Update the story"],
   },
 };
 
 // ─── Flow order ──────────────────────────────────────────────────────
 
 const FLOW: ConversationStep[] = [
-  "names",
+  "name1",
+  "name2",
   "theme",
   "color_motif",
   "color_confirm",
@@ -241,7 +247,7 @@ export function getNextFlowStep(current: ConversationStep): ConversationStep {
 }
 
 export function getInitialMessages(): ChatMessage[] {
-  const step = STEPS.names;
+  const step = STEPS.name1;
   return [createMessage("assistant", step.message, step.quickReplies)];
 }
 

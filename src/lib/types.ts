@@ -11,7 +11,8 @@ export interface WeddingColors {
 }
 
 export interface WeddingData {
-  names?: string;
+  name1?: string;
+  name2?: string;
   theme?: ThemeName;
   tagline?: string;
   date?: string;
@@ -29,6 +30,14 @@ export interface WeddingData {
   countdownEnabled?: boolean;
   noteToGuests?: string;
   backgroundStyle?: string;
+  heroImage?: string;
+  closingImage?: string;
+  logoImage?: string;
+}
+
+export function displayNames(name1?: string, name2?: string): string {
+  if (name1 && name2) return `${name1} & ${name2}`;
+  return name1 || name2 || "";
 }
 
 export interface ChatMessage {
@@ -40,7 +49,8 @@ export interface ChatMessage {
 
 export type ConversationStep =
   // Phase 1: Identity & vibe
-  | "names"
+  | "name1"
+  | "name2"
   | "theme"
   | "color_motif"
   | "color_confirm"

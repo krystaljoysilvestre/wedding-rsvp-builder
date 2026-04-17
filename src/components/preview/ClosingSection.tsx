@@ -3,19 +3,23 @@ import type { Viewport } from "./ViewportSwitcher";
 import Ornament from "./Ornament";
 
 interface ClosingSectionProps {
-  names?: string;
+  name1?: string;
+  name2?: string;
   noteToGuests?: string;
+  customImage?: string;
   theme: ThemeConfig;
   viewport: Viewport;
 }
 
 export default function ClosingSection({
-  names,
+  name1,
+  name2,
   noteToGuests,
+  customImage,
   theme,
   viewport,
 }: ClosingSectionProps) {
-  const displayNames = names || "Your Names";
+  const displayNames = name1 && name2 ? `${name1} & ${name2}` : name1 || name2 || "Your Names";
   const isMobile = viewport === "mobile";
 
   return (
@@ -31,7 +35,7 @@ export default function ClosingSection({
       <div
         className="closing-bg absolute inset-0 bg-cover bg-center"
         style={{
-          backgroundImage: `url('${theme.closingImage}')`,
+          backgroundImage: `url('${customImage || theme.closingImage}')`,
           opacity: 0.07,
         }}
       />

@@ -28,7 +28,7 @@ export default function WeddingPreview() {
   const { data, generating, scrollTarget, setScrollTarget } = useWedding();
   const scrollRef = useRef<HTMLDivElement>(null);
   const baseTheme = getTheme(data.theme);
-  const hasData = Boolean(data.names);
+  const hasData = Boolean(data.name1);
 
   // Merge custom color motif into theme — colors, images, overlay
   const theme = useMemo(() => {
@@ -282,8 +282,9 @@ export default function WeddingPreview() {
             }}
           >
             <TemplateHeader
-              names={data.names}
+              name1={data.name1} name2={data.name2}
               date={data.date}
+              logoImage={data.logoImage}
               theme={theme}
               viewport={viewport}
             />
@@ -292,9 +293,10 @@ export default function WeddingPreview() {
               <>
                 <div id="section-hero">
                   <HeroSection
-                    names={data.names}
+                    name1={data.name1} name2={data.name2}
                     date={data.date}
                     tagline={data.tagline}
+                    customImage={data.heroImage}
                     theme={theme}
                     viewport={viewport}
                   />
@@ -364,8 +366,9 @@ export default function WeddingPreview() {
 
                 <div id="section-closing">
                   <ClosingSection
-                    names={data.names}
+                    name1={data.name1} name2={data.name2}
                     noteToGuests={data.noteToGuests}
+                    customImage={data.closingImage}
                     theme={theme}
                     viewport={viewport}
                   />

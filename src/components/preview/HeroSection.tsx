@@ -3,25 +3,27 @@ import type { Viewport } from "./ViewportSwitcher";
 import Ornament from "./Ornament";
 
 interface HeroSectionProps {
-  names?: string;
+  name1?: string;
+  name2?: string;
   date?: string;
   tagline?: string;
+  customImage?: string;
   theme: ThemeConfig;
   viewport: Viewport;
 }
 
 export default function HeroSection({
-  names,
+  name1,
+  name2,
   date,
+  customImage,
   tagline,
   theme,
   viewport,
 }: HeroSectionProps) {
-  const displayNames = names || "Your Names";
   const displayTagline = tagline || "A celebration of love";
   const isMobile = viewport === "mobile";
   const isTablet = viewport === "tablet";
-  const nameParts = displayNames.split(/\s*&\s*/);
 
   const nameSize = isMobile ? 38 : isTablet ? 56 : 80;
 
@@ -36,7 +38,7 @@ export default function HeroSection({
       {/* Background image — theme-specific */}
       <div
         className="hero-bg absolute inset-0 bg-cover bg-center"
-        style={{ backgroundImage: `url('${theme.heroImage}')` }}
+        style={{ backgroundImage: `url('${customImage || theme.heroImage}')` }}
       />
 
       {/* Overlay layers */}
@@ -74,7 +76,7 @@ export default function HeroSection({
 
         {/* Names */}
         <div className="mt-6" style={{ lineHeight: 1.2 }}>
-          {nameParts.length === 2 ? (
+          {name1 && name2 ? (
             <>
               <h1
                 className="hero-name-1 tracking-tight opacity-0"
@@ -86,7 +88,7 @@ export default function HeroSection({
                   fontSize: nameSize,
                 }}
               >
-                {nameParts[0]}
+                {name1}
               </h1>
               <p
                 className="hero-ampersand my-2 italic opacity-0"
@@ -109,7 +111,7 @@ export default function HeroSection({
                   fontSize: nameSize,
                 }}
               >
-                {nameParts[1]}
+                {name2}
               </h1>
             </>
           ) : (
@@ -123,7 +125,7 @@ export default function HeroSection({
                 fontSize: nameSize,
               }}
             >
-              {displayNames}
+              {name1 || "Your Names"}
             </h1>
           )}
         </div>

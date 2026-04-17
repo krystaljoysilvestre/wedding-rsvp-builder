@@ -1,0 +1,28 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run build)",
+      "Bash(npm run dev)",
+      "Bash(npm run lint)",
+      "Bash(npx next build)",
+      "Bash(mkdir -p *)",
+      "Bash(ls *)",
+      "Read",
+      "Write",
+      "Edit",
+      "Glob",
+      "Grep"
+    ]
+  },
+  "rules": [
+    "Always verify changes with `npx next build` before reporting completion",
+    "Use the warm editorial color palette: backgrounds #FDFBF7/#FAF7F2/#F5F3EF, borders #EDE8E0/#E0D9CE, text #1A1A1A/#5C4F3D/#8B7355, muted #A09580/#B8A48E/#C4B8A4",
+    "Chat messages must be warm, romantic, and celebratory — like a loving wedding planner",
+    "Always read stepRef.current (not step state) inside advanceConversation to avoid stale closures",
+    "Preview sections must accept theme: ThemeConfig and viewport: Viewport props and use theme values for all styling",
+    "New WeddingData fields need updates in: types.ts, EditPanel.tsx (form + FIELD_SECTION), ChatPanel.tsx (STEP_TO_SECTION + handler), and relevant preview components",
+    "GSAP animations in WeddingPreview use gsap.context() with scrollRef — always call ctx.revert() in cleanup",
+    "Avoid Math.random() in SSR components — use deterministic values to prevent hydration mismatches",
+    "Image uploads use object URLs via processImage() in src/lib/image.ts — designed for future Vercel Blob swap"
+  ]
+}

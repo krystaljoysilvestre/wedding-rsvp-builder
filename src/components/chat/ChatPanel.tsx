@@ -61,10 +61,57 @@ async function aiGenerate(
   return data.result ?? "";
 }
 
+// ─── AI-powered input validation ────────────────────────────────────
+
+const STEP_EXPECTS: Partial<Record<ConversationStep, string>> = {
+  name1: "a person's first name",
+  name2: "a person's first name",
+  date: "a wedding date",
+  ceremony_venue: "a venue or place name",
+  ceremony_address: "a physical address",
+  reception_name: "a venue or place name",
+  reception_address: "a physical address",
+  story_input: "a love story or personal narrative",
+  timeline_items: "a list of wedding day events with times",
+};
+
+async function validateInput(
+  input: string,
+  step: ConversationStep
+): Promise<{ valid: boolean; reply: string }> {
+  const expecting = STEP_EXPECTS[step];
+  // Steps without validation always pass
+  if (!expecting) return { valid: true, reply: "" };
+
+  // Quick replies and skip always pass
+  const lower = input.toLowerCase().trim();
+  if (lower === "skip") return { valid: true, reply: "" };
+  const def = getStepDef(step);
+  if (def.quickReplies?.some((q) => q.toLowerCase() === lower))
+    return { valid: true, reply: "" };
+
+  try {
+    const res = await fetch("/api/validate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        input,
+        expecting,
+        question: def.message,
+      }),
+    });
+    return await res.json();
+  } catch {
+    // On error, let it through
+    return { valid: true, reply: "" };
+  }
+}
+
 // ─── Step → preview section mapping ──────────────────────────────────
 
 const STEP_TO_SECTION: Partial<Record<ConversationStep, string>> = {
-  names: "section-hero",
+  name1: "section-hero",
+  name2: "section-hero",
   theme: "section-hero",
   color_motif: "section-hero",
   color_confirm: "section-hero",
@@ -96,8 +143,8 @@ const STEP_TO_SECTION: Partial<Record<ConversationStep, string>> = {
 export default function ChatPanel() {
   const { data, update, setGenerating, setScrollTarget } = useWedding();
   const [messages, setMessages] = useState<ChatMessage[]>(getInitialMessages);
-  const [step, _setStep] = useState<ConversationStep>("names");
-  const stepRef = useRef<ConversationStep>("names");
+  const [step, _setStep] = useState<ConversationStep>("name1");
+  const stepRef = useRef<ConversationStep>("name1");
   const setStep = useCallback((s: ConversationStep) => {
     stepRef.current = s;
     _setStep(s);
@@ -155,10 +202,39 @@ export default function ChatPanel() {
 
       try {
         // ─────────────────────────────────────────
+        // AI-powered input validation
+        // ─────────────────────────────────────────
+        if (lower !== "back to my website") {
+          const validation = await validateInput(userText, currentStep);
+          if (!validation.valid) {
+            await delay(400);
+            addAssistant(validation.reply, ["Back to my website"]);
+            setBusy(false);
+            return;
+          }
+        }
+
+        // Handle "Back to my website" — re-prompt current step
+        if (lower === "back to my website") {
+          const def = getStepDef(currentStep);
+          await delay(300);
+          addAssistant(def.message, def.quickReplies);
+          setBusy(false);
+          return;
+        }
+
+        // ─────────────────────────────────────────
         // Phase 1: Identity & vibe
         // ─────────────────────────────────────────
-        if (currentStep === "names") {
-          update({ names: userText });
+        if (currentStep === "name1") {
+          update({ name1: userText });
+          await delay(400);
+          addAssistant(`${userText} — what a beautiful name!`);
+          await goToStep("name2");
+        } else if (currentStep === "name2") {
+          update({ name2: userText });
+          await delay(400);
+          addAssistant(`${data.name1} & ${userText} — I already love the sound of that together!`);
           await goToStep("theme");
         } else if (currentStep === "theme") {
           const themeMap: Record<string, ThemeName> = {
@@ -211,7 +287,7 @@ export default function ChatPanel() {
             addAssistant("Let me craft something as special as your love...");
             await delay(400);
             const tagline = await aiGenerate("tagline", {
-              names: data.names ?? "",
+              names: `${data.name1 ?? ""} & ${data.name2 ?? ""}`,
               theme: data.theme ?? "elegant",
             });
             update({ tagline });
@@ -239,7 +315,7 @@ export default function ChatPanel() {
             addAssistant("No worries — let me find the words that truly capture you two...");
             await delay(400);
             const tagline = await aiGenerate("tagline", {
-              names: data.names ?? "",
+              names: `${data.name1 ?? ""} & ${data.name2 ?? ""}`,
               theme: data.theme ?? "elegant",
             });
             update({ tagline });
@@ -355,7 +431,7 @@ export default function ChatPanel() {
             addAssistant("Writing something warm and heartfelt for your guests...");
             await delay(300);
             const msg = await aiGenerate("welcome", {
-              names: data.names ?? "",
+              names: `${data.name1 ?? ""} & ${data.name2 ?? ""}`,
               theme: data.theme ?? "elegant",
             });
             update({ welcomeMessage: msg });
@@ -404,7 +480,7 @@ export default function ChatPanel() {
             addAssistant("Let me write something sweet for the people you love most...");
             await delay(300);
             const note = await aiGenerate("note", {
-              names: data.names ?? "",
+              names: `${data.name1 ?? ""} & ${data.name2 ?? ""}`,
               theme: data.theme ?? "elegant",
             });
             update({ noteToGuests: note });
@@ -468,7 +544,7 @@ export default function ChatPanel() {
           </div>
           <div>
             <p className="text-sm font-semibold text-[#1A1A1A]">
-              Love, Coded
+              Coded with Love
             </p>
             <p className="text-[11px] text-[#A09580]">
               Your AI wedding planner
