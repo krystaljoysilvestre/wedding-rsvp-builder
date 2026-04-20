@@ -6,7 +6,6 @@ import type {
   ConversationStep,
   ThemeName,
   TimelineItem,
-  WeddingColors,
 } from "@/lib/types";
 import { useWedding } from "@/context/WeddingContext";
 import {
@@ -18,15 +17,6 @@ import {
 } from "@/lib/conversation";
 import MessageBubble from "./MessageBubble";
 import ChatInput from "./ChatInput";
-
-// ─── Color preset mapping ────────────────────────────────────────────
-
-const COLOR_PRESETS: Record<string, WeddingColors> = {
-  "blush & gold": { primary: "#F4C2C2", accent: "#D4A843" },
-  "sage & ivory": { primary: "#9CAF88", accent: "#FFFFF0" },
-  "navy & silver": { primary: "#1B2A4A", accent: "#C0C0C0" },
-  "burgundy & cream": { primary: "#6B2737", accent: "#FFFDD0" },
-};
 
 // ─── Timeline parser ─────────────────────────────────────────────────
 
@@ -113,8 +103,6 @@ const STEP_TO_SECTION: Partial<Record<ConversationStep, string>> = {
   name1: "section-hero",
   name2: "section-hero",
   theme: "section-hero",
-  color_motif: "section-hero",
-  color_confirm: "section-hero",
   tagline: "section-hero",
   tagline_confirm: "section-hero",
   date: "section-hero",
@@ -235,52 +223,45 @@ export default function ChatPanel() {
           update({ name2: userText });
           await delay(400);
           addAssistant(`${data.name1} & ${userText} — I already love the sound of that together!`);
-          await goToStep("theme");
+          // Skip the theme step when the user already picked a template
+          // (via landing ?theme= or the in-editor TemplateSwitcher).
+          await goToStep(data.theme ? "tagline" : "theme");
         } else if (currentStep === "theme") {
           const themeMap: Record<string, ThemeName> = {
             romantic: "romantic",
             elegant: "elegant",
             minimal: "minimal",
             cinematic: "cinematic",
+            garden: "garden",
+            modern: "modern",
+            "art deco": "artdeco",
+            artdeco: "artdeco",
+            boho: "boho",
+            "boho desert": "boho",
+            bohemian: "boho",
+            coastal: "coastal",
+            beach: "coastal",
+            vintage: "vintage",
+            daisy: "daisy",
+            blue: "daisy",
+            cornflower: "daisy",
+            rustic: "rustic",
+            barn: "rustic",
+            watercolor: "watercolor",
+            painted: "watercolor",
+            tropical: "tropical",
+            island: "tropical",
+            palm: "tropical",
+            whimsical: "whimsical",
+            playful: "whimsical",
+            regal: "regal",
+            royal: "regal",
+            industrial: "industrial",
+            urban: "industrial",
+            loft: "industrial",
           };
           update({ theme: themeMap[lower] ?? "elegant" });
-          await goToStep("color_motif");
-        } else if (currentStep === "color_motif") {
-          if (!isSkip) {
-            const preset = COLOR_PRESETS[lower];
-            if (preset) {
-              update({ colors: preset });
-            } else {
-              // Parse free text: could be hex, "hex & hex", or color names
-              const hexes = userText.match(/#[0-9A-Fa-f]{3,8}/g);
-              if (hexes && hexes.length >= 2) {
-                update({ colors: { primary: hexes[0], accent: hexes[1] } });
-              } else if (hexes && hexes.length === 1) {
-                update({ colors: { primary: hexes[0], accent: hexes[0] } });
-              } else {
-                // Treat as a named color pair like "dusty rose & sage"
-                const parts = userText.split(/\s*&\s*/);
-                update({
-                  colors: {
-                    primary: parts[0]?.trim() || userText,
-                    accent: parts[1]?.trim() || "",
-                  },
-                });
-              }
-            }
-          }
-          if (isSkip) {
-            await goToStep("tagline");
-          } else {
-            await goToStep("color_confirm");
-          }
-        } else if (currentStep === "color_confirm") {
-          if (lower === "perfect") {
-            await goToStep("tagline");
-          } else {
-            // "Change colors" — go back
-            await goToStep("color_motif");
-          }
+          await goToStep("tagline");
         } else if (currentStep === "tagline") {
           if (lower === "generate one for me") {
             setGenerating(true);

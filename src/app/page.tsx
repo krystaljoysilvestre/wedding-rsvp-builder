@@ -4,41 +4,184 @@ import { useRef, useEffect, useState } from "react";
 import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import TemplatePreviewModal from "@/components/landing/TemplatePreviewModal";
 
 gsap.registerPlugin(ScrollTrigger);
 
 // ─── Data ────────────────────────────────────────────────────────────
 
-const TEMPLATES = [
+type Tier = "free" | "premium";
+interface Template {
+  slug: string;
+  name: string;
+  tier: Tier;
+  desc: string;
+  image: string;
+  colors: string[];
+  font: string;
+}
+
+const TEMPLATES: Template[] = [
+  // Free collection
   {
+    slug: "romantic",
     name: "Romantic",
+    tier: "free",
     desc: "Soft serifs, warm blush tones, and botanical flourishes for the hopeless romantics.",
-    image: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1529519195486-16945f0fb37f?w=800&q=80",
     colors: ["#FDF8F4", "#C4917B", "#3D2B1F"],
     font: "var(--font-cormorant), serif",
   },
   {
+    slug: "elegant",
     name: "Elegant",
+    tier: "free",
     desc: "High-contrast serif headings, clean lines, and monochrome sophistication.",
-    image: "https://images.unsplash.com/photo-1519741497674-611481863552?w=800&q=80",
+    image: "https://images.unsplash.com/photo-1515934751635-c81c6bc9a2d8?w=800&q=80",
     colors: ["#FFFFFF", "#0A0A0A", "#6B6B6B"],
     font: "var(--font-playfair), serif",
   },
   {
+    slug: "minimal",
     name: "Minimal",
-    desc: "Clean geometric sans-serif, airy spacing, and understated beauty.",
-    image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&q=80",
+    tier: "free",
+    desc: "Geometric sans-serif, airy spacing, and understated beauty.",
+    image: "https://images.unsplash.com/photo-1487530811176-3780de880c2d?w=800&q=80",
     colors: ["#FAFAFA", "#555555", "#1A1A1A"],
     font: "var(--font-inter), sans-serif",
   },
   {
+    slug: "garden",
+    name: "Garden",
+    tier: "free",
+    desc: "Fresh botanicals, sage greens, and organic italic serifs for outdoor ceremonies.",
+    image: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+    colors: ["#F5F8ED", "#7A9A6B", "#2D4A2B"],
+    font: "var(--font-lora), serif",
+  },
+  {
+    slug: "daisy",
+    name: "Daisy",
+    tier: "free",
+    desc: "Cornflower blue, hand-drawn daisies, torn-paper edges, and script-serif mix for photo-forward prenup stories.",
+    image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
+    colors: ["#FFFFFF", "#2E56A3", "#1B3A6B"],
+    font: "var(--font-cormorant), serif",
+  },
+  {
+    slug: "rustic",
+    name: "Rustic",
+    tier: "free",
+    desc: "Warm wood, burlap cream, and wildflower serif italics for barn and backyard ceremonies.",
+    image: "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
+    colors: ["#F5EBE0", "#8B5A2B", "#4A3626"],
+    font: "var(--font-cormorant), serif",
+  },
+  {
+    slug: "watercolor",
+    name: "Watercolor",
+    tier: "free",
+    desc: "Soft washed florals, dusty lilac, and handwritten-feel italics for a painted love story.",
+    image: "https://images.unsplash.com/photo-1509927083803-4bd519298ac4?w=800&q=80",
+    colors: ["#FBF8F3", "#C9A7C5", "#52495C"],
+    font: "var(--font-cormorant), serif",
+  },
+  {
+    slug: "modern",
+    name: "Modern",
+    tier: "free",
+    desc: "Bold display serif, confident contrast, and architectural restraint for the design-forward.",
+    image: "https://images.unsplash.com/photo-1566836610593-62a64888a216?w=800&q=80",
+    colors: ["#F8F6F2", "#1A1A1A", "#5C5C5C"],
+    font: "var(--font-playfair), serif",
+  },
+
+  // Premium collection
+  {
+    slug: "cinematic",
     name: "Cinematic",
+    tier: "premium",
     desc: "Dark, dramatic, gold-accented — like the opening credits of your love story.",
     image: "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
     colors: ["#0C0C0C", "#C9A96E", "#F2E8D5"],
     font: "var(--font-cinzel), serif",
   },
+  {
+    slug: "artdeco",
+    name: "Art Deco",
+    tier: "premium",
+    desc: "Gold geometry, midnight black, and Gatsby-era drama for the grand occasion.",
+    image: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&q=80",
+    colors: ["#0D0D0D", "#D4A73A", "#F5E6C8"],
+    font: "var(--font-cinzel), serif",
+  },
+  {
+    slug: "boho",
+    name: "Boho Desert",
+    tier: "premium",
+    desc: "Sunset coral, sandy warmth, and hand-drawn soul for the free-spirited.",
+    image: "https://images.unsplash.com/photo-1517722014278-c256a91a6fba?w=800&q=80",
+    colors: ["#F2E6D0", "#C46947", "#5C3A1F"],
+    font: "var(--font-cormorant), serif",
+  },
+  {
+    slug: "coastal",
+    name: "Coastal",
+    tier: "premium",
+    desc: "Watercolor blues, airy spacing, and breezy serifs for seaside 'I do's.",
+    image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&q=80",
+    colors: ["#F0F6F9", "#4A7898", "#1F3D52"],
+    font: "var(--font-cormorant), serif",
+  },
+  {
+    slug: "vintage",
+    name: "Vintage",
+    tier: "premium",
+    desc: "Aged paper, muted rose, and old-letter serifs for timeless romantics.",
+    image: "https://images.unsplash.com/photo-1469371670807-013ccf25f16a?w=800&q=80",
+    colors: ["#F5EDE0", "#A32B3A", "#3D2818"],
+    font: "var(--font-playfair), serif",
+  },
+  {
+    slug: "tropical",
+    name: "Tropical",
+    tier: "premium",
+    desc: "Palm green, luxury island air, and italic Playfair serifs for destination ceremonies.",
+    image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&q=80",
+    colors: ["#EDF5EE", "#2F6B4A", "#1F3A2C"],
+    font: "var(--font-playfair), serif",
+  },
+  {
+    slug: "whimsical",
+    name: "Whimsical",
+    tier: "premium",
+    desc: "Playful pastels, plum serif italics, and softened corners for couples who lead with joy.",
+    image: "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+    colors: ["#FEF6F4", "#E3A1B8", "#6B3E5C"],
+    font: "var(--font-cormorant), serif",
+  },
+  {
+    slug: "regal",
+    name: "Regal",
+    tier: "premium",
+    desc: "Royal wine, aged gold, and heavy Playfair display for ceremonies that feel like coronations.",
+    image: "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&q=80",
+    colors: ["#F8F2E6", "#7A3E5F", "#2D1B3A"],
+    font: "var(--font-playfair), serif",
+  },
+  {
+    slug: "industrial",
+    name: "Industrial",
+    tier: "premium",
+    desc: "Concrete gray, steel accents, and geometric sans for urban warehouse weddings.",
+    image: "https://images.unsplash.com/photo-1566836610593-62a64888a216?w=800&q=80",
+    colors: ["#EDECEA", "#4A4A4A", "#2B2B2B"],
+    font: "var(--font-inter), sans-serif",
+  },
 ];
+
+const FREE_TEMPLATES = TEMPLATES.filter((t) => t.tier === "free");
+const PREMIUM_TEMPLATES = TEMPLATES.filter((t) => t.tier === "premium");
 
 const FEATURES = [
   {
@@ -95,6 +238,159 @@ const PARTICLE_DATA = [
   { w: 2.3, o: 0.20, l: 85, t: 31 }, { w: 1.1, o: 0.15, l: 42, t: 95 },
 ];
 
+const IFRAME_NATIVE_WIDTH = 1280;
+
+function TemplateCard({
+  t,
+  isActive,
+  premium,
+  onHover,
+  onOpen,
+}: {
+  t: Template;
+  isActive: boolean;
+  premium?: boolean;
+  onHover: () => void;
+  onOpen: () => void;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(0.28);
+
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const update = () => {
+      const w = el.clientWidth;
+      if (w > 0) setScale(w / IFRAME_NATIVE_WIDTH);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className={`lp-template-card group relative block w-full overflow-hidden rounded-lg text-left opacity-0 transition-all duration-500 ${
+        isActive ? "scale-[1.02]" : "hover:scale-[1.01]"
+      }`}
+      style={{
+        background: t.colors[0],
+        outline: isActive ? `2px solid ${t.colors[1]}` : "none",
+        outlineOffset: 4,
+      }}
+      onMouseEnter={onHover}
+    >
+      {/* Live template preview (scaled iframe, auto-fit to card width) */}
+      <div
+        ref={wrapRef}
+        className="relative h-56 overflow-hidden"
+        style={{ background: t.colors[0] }}
+      >
+        <iframe
+          src={`/preview-demo/${t.slug}?mode=thumbnail`}
+          loading="lazy"
+          title={`${t.name} template preview`}
+          aria-hidden
+          className="pointer-events-none absolute top-0 left-0"
+          style={{
+            width: `${IFRAME_NATIVE_WIDTH}px`,
+            height: "1024px",
+            transform: `scale(${scale})`,
+            transformOrigin: "top left",
+            border: 0,
+          }}
+        />
+        <div
+          className="pointer-events-none absolute inset-0"
+          style={{
+            background: `linear-gradient(to bottom, ${t.colors[0]}00 30%, ${t.colors[0]} 100%)`,
+          }}
+        />
+        {premium && (
+          <div
+            className="absolute right-3 top-3 flex items-center gap-1.5 rounded-full border border-white/20 bg-black/50 px-2.5 py-1 backdrop-blur-sm"
+            style={{ fontFamily: "var(--font-dm-sans)" }}
+          >
+            <svg
+              className="h-3 w-3 text-[#E8D5C4]"
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden
+            >
+              <rect x="3" y="7" width="10" height="7" rx="1" />
+              <path d="M5 7V5a3 3 0 016 0v2" />
+            </svg>
+            <span className="text-[9px] font-medium uppercase tracking-[0.2em] text-[#F5E6C8]">
+              Premium
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div
+        className="relative px-5 pb-6 pt-2"
+        style={{ background: t.colors[0] }}
+      >
+        <div className="mb-3 flex gap-1.5">
+          {t.colors.map((c, j) => (
+            <div
+              key={j}
+              className="h-3 w-3 rounded-full transition-transform duration-300 group-hover:scale-110"
+              style={{
+                background: c,
+                border:
+                  c === "#FFFFFF" || c === "#FAFAFA"
+                    ? "1px solid #E5E5E5"
+                    : "none",
+              }}
+            />
+          ))}
+        </div>
+        <h3
+          className="text-lg"
+          style={{ fontFamily: t.font, fontWeight: 400, color: t.colors[2] }}
+        >
+          {t.name}
+        </h3>
+        <p
+          className="mt-1.5 text-[13px] leading-relaxed"
+          style={{
+            fontFamily: "var(--font-dm-sans)",
+            color: `${t.colors[2]}99`,
+          }}
+        >
+          {t.desc}
+        </p>
+        <div
+          className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.25em] transition-all duration-300 group-hover:gap-3"
+          style={{ fontFamily: "var(--font-dm-sans)", color: t.colors[1] }}
+        >
+          Preview template
+          <svg
+            className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
+            />
+          </svg>
+        </div>
+      </div>
+    </button>
+  );
+}
+
 function Particles() {
   return (
     <div className="lp-particles pointer-events-none absolute inset-0 overflow-hidden">
@@ -120,6 +416,7 @@ function Particles() {
 export default function LandingPage() {
   const pageRef = useRef<HTMLDivElement>(null);
   const [activeTemplate, setActiveTemplate] = useState(0);
+  const [previewTemplate, setPreviewTemplate] = useState<Template | null>(null);
 
   useEffect(() => {
     const ctx = gsap.context(() => {
@@ -517,88 +814,87 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Template selector dots */}
-          <div className="mt-10 flex justify-center gap-2">
-            {TEMPLATES.map((t, i) => (
-              <button
-                key={t.name}
-                type="button"
-                onClick={() => setActiveTemplate(i)}
-                className="flex h-8 items-center gap-1.5 rounded-full border px-3 text-[10px] font-medium uppercase tracking-[0.15em] transition-all duration-400"
-                style={{
-                  fontFamily: "var(--font-dm-sans)",
-                  borderColor: activeTemplate === i ? t.colors[1] : "#E0E0E0",
-                  background: activeTemplate === i ? `${t.colors[1]}12` : "white",
-                  color: activeTemplate === i ? t.colors[1] : "#999",
-                }}
+          {/* Free Collection */}
+          <div className="mt-20">
+            <div className="lp-reveal mb-10 flex items-end justify-between gap-4 border-b border-[#E8E4DE] pb-5">
+              <div>
+                <p
+                  className="text-[10px] font-medium uppercase tracking-[0.4em] text-[#B8A48E]"
+                  style={{ fontFamily: "var(--font-dm-sans)" }}
+                >
+                  Free Collection
+                </p>
+                <h3
+                  className="mt-2 text-xl sm:text-2xl"
+                  style={{ fontFamily: "var(--font-playfair), serif", fontWeight: 400, color: "#1A1A1A" }}
+                >
+                  For every couple, on the house
+                </h3>
+              </div>
+              <span
+                className="flex-shrink-0 text-[10px] uppercase tracking-[0.2em] text-[#999]"
+                style={{ fontFamily: "var(--font-dm-sans)" }}
               >
-                <span
-                  className="h-2 w-2 rounded-full transition-colors duration-400"
-                  style={{ background: t.colors[1] }}
-                />
-                {t.name}
-              </button>
-            ))}
+                {FREE_TEMPLATES.length} templates
+              </span>
+            </div>
+
+            <div className="lp-templates-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {FREE_TEMPLATES.map((t) => {
+                const i = TEMPLATES.findIndex((x) => x.slug === t.slug);
+                return (
+                  <TemplateCard
+                    key={t.slug}
+                    t={t}
+                    isActive={activeTemplate === i}
+                    onHover={() => setActiveTemplate(i)}
+                    onOpen={() => setPreviewTemplate(t)}
+                  />
+                );
+              })}
+            </div>
           </div>
 
-          <div className="lp-templates-grid mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {TEMPLATES.map((t, i) => (
-              <Link
-                key={t.name}
-                href={`/builder?theme=${t.name.toLowerCase()}`}
-                className={`lp-template-card group relative overflow-hidden rounded-lg opacity-0 transition-all duration-500 ${
-                  activeTemplate === i
-                    ? "scale-[1.02]"
-                    : "hover:scale-[1.01]"
-                }`}
-                style={{
-                  background: t.colors[0],
-                  outline: activeTemplate === i ? `2px solid ${t.colors[1]}` : "none",
-                  outlineOffset: 4,
-                }}
-                onMouseEnter={() => setActiveTemplate(i)}
+          {/* Premium Collection */}
+          <div className="mt-24">
+            <div className="lp-reveal mb-10 flex items-end justify-between gap-4 border-b border-[#E8E4DE] pb-5">
+              <div>
+                <p
+                  className="text-[10px] font-medium uppercase tracking-[0.4em] text-[#C4917B]"
+                  style={{ fontFamily: "var(--font-dm-sans)" }}
+                >
+                  Premium Collection
+                </p>
+                <h3
+                  className="mt-2 text-xl sm:text-2xl"
+                  style={{ fontFamily: "var(--font-playfair), serif", fontWeight: 400, color: "#1A1A1A" }}
+                >
+                  Signature templates, unlocked at publish
+                </h3>
+              </div>
+              <span
+                className="flex-shrink-0 text-[10px] uppercase tracking-[0.2em] text-[#999]"
+                style={{ fontFamily: "var(--font-dm-sans)" }}
               >
-                {/* Image */}
-                <div className="relative h-56 overflow-hidden">
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-110"
-                    style={{ backgroundImage: `url('${t.image}')` }}
-                  />
-                  <div
-                    className="absolute inset-0"
-                    style={{ background: `linear-gradient(to bottom, ${t.colors[0]}00 30%, ${t.colors[0]} 100%)` }}
-                  />
-                </div>
+                {PREMIUM_TEMPLATES.length} templates
+              </span>
+            </div>
 
-                {/* Content */}
-                <div className="relative px-5 pb-6 pt-2" style={{ background: t.colors[0] }}>
-                  <div className="mb-3 flex gap-1.5">
-                    {t.colors.map((c, j) => (
-                      <div
-                        key={j}
-                        className="h-3 w-3 rounded-full transition-transform duration-300 group-hover:scale-110"
-                        style={{ background: c, border: c === "#FFFFFF" || c === "#FAFAFA" ? "1px solid #E5E5E5" : "none" }}
-                      />
-                    ))}
-                  </div>
-                  <h3 className="text-lg" style={{ fontFamily: t.font, fontWeight: 400, color: t.colors[2] }}>
-                    {t.name}
-                  </h3>
-                  <p className="mt-1.5 text-[13px] leading-relaxed" style={{ fontFamily: "var(--font-dm-sans)", color: `${t.colors[2]}99` }}>
-                    {t.desc}
-                  </p>
-                  <div
-                    className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-medium uppercase tracking-[0.25em] transition-all duration-300 group-hover:gap-3"
-                    style={{ fontFamily: "var(--font-dm-sans)", color: t.colors[1] }}
-                  >
-                    Use this template
-                    <svg className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
-                    </svg>
-                  </div>
-                </div>
-              </Link>
-            ))}
+            <div className="lp-templates-grid grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+              {PREMIUM_TEMPLATES.map((t) => {
+                const i = TEMPLATES.findIndex((x) => x.slug === t.slug);
+                return (
+                  <TemplateCard
+                    key={t.slug}
+                    t={t}
+                    isActive={activeTemplate === i}
+                    onHover={() => setActiveTemplate(i)}
+                    onOpen={() => setPreviewTemplate(t)}
+                    premium
+                  />
+                );
+              })}
+            </div>
           </div>
         </div>
       </section>
@@ -779,6 +1075,12 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      <TemplatePreviewModal
+        open={previewTemplate !== null}
+        template={previewTemplate}
+        onClose={() => setPreviewTemplate(null)}
+      />
     </div>
   );
 }

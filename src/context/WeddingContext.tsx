@@ -13,6 +13,10 @@ interface WeddingContextValue {
   data: WeddingData;
   generating: boolean;
   scrollTarget: string | null;
+  /** When true, consumers render the preview without section locks — used
+   *  by the `/preview-demo/[theme]` route so gallery iframes and the
+   *  preview modal show the full template without "Add your …" hints. */
+  demoMode: boolean;
   update: (partial: Partial<WeddingData>) => void;
   setGenerating: (v: boolean) => void;
   setScrollTarget: (id: string | null) => void;
@@ -23,8 +27,18 @@ const WeddingContext = createContext<WeddingContextValue | null>(null);
 
 const INITIAL: WeddingData = {};
 
-export function WeddingProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<WeddingData>(INITIAL);
+interface WeddingProviderProps {
+  children: ReactNode;
+  initialData?: WeddingData;
+  demoMode?: boolean;
+}
+
+export function WeddingProvider({
+  children,
+  initialData,
+  demoMode = false,
+}: WeddingProviderProps) {
+  const [data, setData] = useState<WeddingData>(initialData ?? INITIAL);
   const [generating, setGenerating] = useState(false);
   const [scrollTarget, setScrollTarget] = useState<string | null>(null);
 
@@ -34,11 +48,20 @@ export function WeddingProvider({ children }: { children: ReactNode }) {
     []
   );
 
-  const reset = useCallback(() => setData(INITIAL), []);
+  const reset = useCallback(() => setData(initialData ?? INITIAL), [initialData]);
 
   return (
     <WeddingContext.Provider
-      value={{ data, generating, scrollTarget, update, setGenerating, setScrollTarget, reset }}
+      value={{
+        data,
+        generating,
+        scrollTarget,
+        demoMode,
+        update,
+        setGenerating,
+        setScrollTarget,
+        reset,
+      }}
     >
       {children}
     </WeddingContext.Provider>

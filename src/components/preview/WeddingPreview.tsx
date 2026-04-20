@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useWedding } from "@/context/WeddingContext";
 import { getTheme } from "@/lib/themes";
+import { withDummyFallback } from "@/lib/dummyData";
 import ViewportSwitcher, { type Viewport } from "./ViewportSwitcher";
 import TemplateHeader from "./TemplateHeader";
 import HeroSection from "./HeroSection";
@@ -15,6 +16,7 @@ import CountdownSection from "./CountdownSection";
 import DressCodeSection from "./DressCodeSection";
 import RsvpSection from "./RsvpSection";
 import ClosingSection from "./ClosingSection";
+import SectionLock from "./SectionLock";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -25,10 +27,13 @@ const VIEWPORT_MAX_WIDTH: Record<Viewport, string> = {
 };
 
 export default function WeddingPreview() {
-  const { data, generating, scrollTarget, setScrollTarget } = useWedding();
+  const { data, generating, scrollTarget, setScrollTarget, demoMode } = useWedding();
   const scrollRef = useRef<HTMLDivElement>(null);
   const baseTheme = getTheme(data.theme);
-  const hasData = Boolean(data.name1);
+  // Merge real user data over per-template dummy data so every section
+  // always has believable content. Sections stay behind a SectionLock
+  // overlay until the user fills the unlocking field(s).
+  const displayData = useMemo(() => withDummyFallback(data.theme, data), [data]);
 
   // Merge custom color motif into theme — colors, images, overlay
   const theme = useMemo(() => {
@@ -69,9 +74,67 @@ export default function WeddingPreview() {
       return `rgba(${r}, ${g}, ${b}, ${opacity})`;
     }
 
+    // ─── Color math for derived heading / body colors ─────
+    // Convert a hex color to HSL so we can restyle headings/body to a shade
+    // of the chosen primary (keeping hue + saturation, retargeting lightness).
+    function hexToHsl(hex: string): [number, number, number] {
+      const r = parseInt(hex.slice(1, 3), 16) / 255;
+      const g = parseInt(hex.slice(3, 5), 16) / 255;
+      const b = parseInt(hex.slice(5, 7), 16) / 255;
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      const l = (max + min) / 2;
+      if (max === min) return [0, 0, l];
+      const d = max - min;
+      const s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+      let h = 0;
+      if (max === r) h = (g - b) / d + (g < b ? 6 : 0);
+      else if (max === g) h = (b - r) / d + 2;
+      else h = (r - g) / d + 4;
+      return [h * 60, s, l];
+    }
+
+    function hslToHex(h: number, s: number, l: number): string {
+      const c = (1 - Math.abs(2 * l - 1)) * s;
+      const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+      const m = l - c / 2;
+      let r = 0, g = 0, b = 0;
+      if (h < 60) [r, g, b] = [c, x, 0];
+      else if (h < 120) [r, g, b] = [x, c, 0];
+      else if (h < 180) [r, g, b] = [0, c, x];
+      else if (h < 240) [r, g, b] = [0, x, c];
+      else if (h < 300) [r, g, b] = [x, 0, c];
+      else [r, g, b] = [c, 0, x];
+      const to = (v: number) =>
+        Math.round((v + m) * 255).toString(16).padStart(2, "0");
+      return `#${to(r)}${to(g)}${to(b)}`;
+    }
+
+    function deriveShade(hex: string, targetL: number, satCap = 0.7): string {
+      const [h, s] = hexToHsl(hex);
+      return hslToHex(h, Math.min(s, satCap), targetL);
+    }
+
+    // Measure the base template's background lightness. Light backgrounds
+    // (> 0.5) get dark derived text; dark backgrounds keep their original
+    // light text so contrast doesn't invert into unreadability.
+    const [, , bgLightness] = hexToHsl(
+      baseTheme.bg.length === 7 ? baseTheme.bg : "#FFFFFF"
+    );
+    const bgIsLight = bgLightness > 0.5;
+
     if (isHex(primary)) {
+      const derivedText = bgIsLight
+        ? deriveShade(primary, 0.18, 0.6)
+        : baseTheme.text;
+      const derivedMuted = bgIsLight
+        ? deriveShade(primary, 0.48, 0.45)
+        : baseTheme.textMuted;
+
       return {
         ...baseTheme,
+        text: derivedText,
+        textMuted: derivedMuted,
         accent: primary,
         accentMuted: isHex(accent) ? accent : primary,
         border: `${primary}33`,
@@ -102,7 +165,7 @@ export default function WeddingPreview() {
   // GSAP animations
   useEffect(() => {
     const scroller = scrollRef.current;
-    if (!scroller || !hasData) return;
+    if (!scroller) return;
 
     const ctx = gsap.context(() => {
       // ─── Hero entrance ─────────────────────────────
@@ -229,17 +292,19 @@ export default function WeddingPreview() {
     }, scrollRef);
 
     return () => ctx.revert();
-  }, [data, theme, hasData, viewport]);
+  }, [data, theme, viewport]);
 
   return (
     <div className="flex h-full flex-col bg-[#F0EDEA]">
       {/* Toolbar — hidden on mobile */}
-      <div className="hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex">
-        <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-          Preview
-        </p>
-        <ViewportSwitcher active={viewport} onChange={setViewport} />
-      </div>
+      {!demoMode && (
+        <div className="hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex">
+          <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
+            Preview
+          </p>
+          <ViewportSwitcher active={viewport} onChange={setViewport} />
+        </div>
+      )}
 
       {/* Preview area */}
       <div className="relative flex-1 overflow-hidden">
@@ -282,124 +347,131 @@ export default function WeddingPreview() {
             }}
           >
             <TemplateHeader
-              name1={data.name1} name2={data.name2}
-              date={data.date}
+              name1={displayData.name1} name2={displayData.name2}
+              date={displayData.date}
               logoImage={data.logoImage}
               theme={theme}
               viewport={viewport}
             />
 
-            {hasData ? (
-              <>
-                <div id="section-hero">
-                  <HeroSection
-                    name1={data.name1} name2={data.name2}
-                    date={data.date}
-                    tagline={data.tagline}
-                    customImage={data.heroImage}
-                    theme={theme}
-                    viewport={viewport}
-                  />
-                </div>
+            <div id="section-hero">
+              <SectionLock
+                locked={demoMode ? false : !data.name1 || !data.name2}
+                hint="Add your names"
+                overlayBg={theme.bg}
+              >
+                <HeroSection
+                  name1={displayData.name1} name2={displayData.name2}
+                  date={displayData.date}
+                  tagline={displayData.tagline}
+                  customImage={data.heroImage ?? displayData.heroImage}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
 
-                {(data.story || data.welcomeMessage) && (
-                  <div id="section-story">
-                    <StorySection
-                      story={data.story}
-                      welcomeMessage={data.welcomeMessage}
-                      theme={theme}
-                      viewport={viewport}
-                    />
-                  </div>
-                )}
+            <div id="section-story">
+              <SectionLock
+                locked={demoMode ? false : !data.story && !data.welcomeMessage}
+                hint="Share your story"
+                overlayBg={theme.bg}
+              >
+                <StorySection
+                  story={displayData.story}
+                  welcomeMessage={displayData.welcomeMessage}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
 
-                {data.countdownEnabled && data.date && (
-                  <div id="section-countdown">
-                    <CountdownSection
-                      date={data.date}
-                      theme={theme}
-                      viewport={viewport}
-                    />
-                  </div>
-                )}
+            <div id="section-countdown">
+              <SectionLock
+                locked={demoMode ? false : !data.countdownEnabled || !data.date}
+                hint="Turn on the countdown"
+                overlayBg={theme.bg}
+              >
+                <CountdownSection
+                  date={displayData.date ?? ""}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
 
-                {(data.ceremonyVenue || data.date) && (
-                  <div id="section-details">
-                    <DetailsSection
-                      date={data.date}
-                      ceremonyType={data.ceremonyType}
-                      ceremonyVenue={data.ceremonyVenue}
-                      ceremonyAddress={data.ceremonyAddress}
-                      receptionVenue={data.receptionVenue}
-                      receptionAddress={data.receptionAddress}
-                      theme={theme}
-                      viewport={viewport}
-                    />
-                  </div>
-                )}
+            <div id="section-details">
+              <SectionLock
+                locked={demoMode ? false : !data.ceremonyVenue && !data.date}
+                hint="Add your venue"
+                overlayBg={theme.bg}
+              >
+                <DetailsSection
+                  date={displayData.date}
+                  ceremonyType={displayData.ceremonyType}
+                  ceremonyVenue={displayData.ceremonyVenue}
+                  ceremonyAddress={displayData.ceremonyAddress}
+                  receptionVenue={displayData.receptionVenue}
+                  receptionAddress={displayData.receptionAddress}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
 
-                {data.timeline && data.timeline.length > 0 && (
-                  <div id="section-timeline">
-                    <TimelineSection
-                      timeline={data.timeline}
-                      theme={theme}
-                      viewport={viewport}
-                    />
-                  </div>
-                )}
+            <div id="section-timeline">
+              <SectionLock
+                locked={demoMode ? false : !data.timeline || data.timeline.length === 0}
+                hint="Add your timeline"
+                overlayBg={theme.bg}
+              >
+                <TimelineSection
+                  timeline={displayData.timeline ?? []}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
 
-                {data.dressCode && (
-                  <div id="section-dresscode">
-                    <DressCodeSection
-                      dressCode={data.dressCode}
-                      theme={theme}
-                      viewport={viewport}
-                    />
-                  </div>
-                )}
+            <div id="section-dresscode">
+              <SectionLock
+                locked={demoMode ? false : !data.dressCode}
+                hint="Set a dress code"
+                overlayBg={theme.bg}
+              >
+                <DressCodeSection
+                  dressCode={displayData.dressCode ?? ""}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
 
-                {data.rsvpEnabled && (
-                  <div id="section-rsvp">
-                    <RsvpSection theme={theme} viewport={viewport} />
-                  </div>
-                )}
+            <div id="section-rsvp">
+              <SectionLock
+                locked={demoMode ? false : !data.rsvpEnabled}
+                hint="Turn on RSVP"
+                overlayBg={theme.bg}
+              >
+                <RsvpSection theme={theme} viewport={viewport} />
+              </SectionLock>
+            </div>
 
-                <div id="section-closing">
-                  <ClosingSection
-                    name1={data.name1} name2={data.name2}
-                    noteToGuests={data.noteToGuests}
-                    customImage={data.closingImage}
-                    theme={theme}
-                    viewport={viewport}
-                  />
-                </div>
-              </>
-            ) : (
-              <div className="flex h-full items-center justify-center px-8">
-                <div className="text-center">
-                  <div
-                    className="mx-auto mb-5 h-px w-12"
-                    style={{ background: theme.border }}
-                  />
-                  <p
-                    className="text-3xl font-light tracking-tight"
-                    style={{ color: theme.text, fontFamily: theme.headingFont }}
-                  >
-                    Your wedding website
-                  </p>
-                  <p
-                    className="mt-3 text-sm"
-                    style={{ color: theme.textMuted, fontFamily: theme.bodyFont }}
-                  >
-                    Answer a few questions and watch it come to life.
-                  </p>
-                  <div
-                    className="mx-auto mt-5 h-px w-12"
-                    style={{ background: theme.border }}
-                  />
-                </div>
-              </div>
-            )}
+            <div id="section-closing">
+              <SectionLock
+                locked={demoMode ? false : !data.noteToGuests && (!data.name1 || !data.name2)}
+                hint="Leave a note for guests"
+                overlayBg={theme.bg}
+              >
+                <ClosingSection
+                  name1={displayData.name1} name2={displayData.name2}
+                  noteToGuests={displayData.noteToGuests}
+                  customImage={data.closingImage ?? displayData.closingImage}
+                  theme={theme}
+                  viewport={viewport}
+                />
+              </SectionLock>
+            </div>
           </div>
         </div>
       </div>

@@ -43,25 +43,6 @@ const STEPS: Record<ConversationStep, StepDef> = {
     quickReplies: ["Romantic", "Elegant", "Minimal", "Cinematic"],
     field: "theme",
   },
-  color_motif: {
-    message:
-      "Do you have colors that feel like your love? A palette that sets the mood — pick one or type your own, even a hex code like #C4917B.",
-    quickReplies: [
-      "Blush & Gold",
-      "Sage & Ivory",
-      "Navy & Silver",
-      "Burgundy & Cream",
-      "Skip",
-    ],
-    skippable: true,
-    field: "colors",
-  },
-  color_confirm: {
-    message: "Here's how your colors look on the preview. Do they feel right?",
-    quickReplies: ["Perfect", "Change colors"],
-    selectionOnly: true,
-    field: "_color_confirm",
-  },
   tagline: {
     message:
       "Every great love deserves a great line. Would you like me to write a tagline that captures your story?",
@@ -205,8 +186,6 @@ const FLOW: ConversationStep[] = [
   "name1",
   "name2",
   "theme",
-  "color_motif",
-  "color_confirm",
   "tagline",
   "tagline_confirm",
   "date",

@@ -23,9 +23,8 @@ function ThemeQueryInitializer() {
     if (!raw) return;
     if (!THEME_NAMES.includes(raw as ThemeName)) return;
     const theme = raw as ThemeName;
-    const patch: Parameters<typeof update>[0] = { theme };
-    if (!data.colors) patch.colors = THEME_PALETTES[theme];
-    update(patch);
+    // Apply both theme and its palette on landing-page arrival.
+    update({ theme, colors: THEME_PALETTES[theme] });
     // Run once on mount — intentionally omit deps so later state updates don't retrigger.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -63,11 +62,18 @@ function MobileLayout() {
         <MobileTabButton label="Edit" active={tab === "edit"} onClick={() => setTab("edit")} />
       </div>
 
-      {/* Active pane */}
-      <div className="flex-1 overflow-hidden">
-        {tab === "preview" && <WeddingPreview />}
-        {tab === "chat" && <ChatPanel />}
-        {tab === "edit" && <EditPanel />}
+      {/* Active pane — all three stay mounted so component state (chat
+          messages, scroll position, focus) persists when switching tabs. */}
+      <div className="relative flex-1 overflow-hidden">
+        <div className={`absolute inset-0 ${tab === "preview" ? "block" : "hidden"}`}>
+          <WeddingPreview />
+        </div>
+        <div className={`absolute inset-0 ${tab === "chat" ? "block" : "hidden"}`}>
+          <ChatPanel />
+        </div>
+        <div className={`absolute inset-0 ${tab === "edit" ? "block" : "hidden"}`}>
+          <EditPanel />
+        </div>
       </div>
     </div>
   );
@@ -110,9 +116,9 @@ function DesktopLayout() {
   return (
     <div className="flex h-screen overflow-hidden">
       {/* Preview — left side */}
-      <div className="flex flex-1 flex-col">
+      <div className="flex min-w-0 flex-1 flex-col">
         <TemplateSwitcher />
-        <div className="flex-1 overflow-hidden">
+        <div className="min-w-0 flex-1 overflow-hidden">
           <WeddingPreview />
         </div>
       </div>
@@ -245,9 +251,15 @@ function DesktopLayout() {
             </button>
           </div>
 
-          {/* Panel content */}
-          <div className="flex-1 overflow-hidden">
-            {tab === "chat" ? <ChatPanel /> : <EditPanel />}
+          {/* Panel content — both stay mounted to preserve component state
+              (chat messages, scroll position, in-progress inputs). */}
+          <div className="relative flex-1 overflow-hidden">
+            <div className={`absolute inset-0 ${tab === "chat" ? "block" : "hidden"}`}>
+              <ChatPanel />
+            </div>
+            <div className={`absolute inset-0 ${tab === "edit" ? "block" : "hidden"}`}>
+              <EditPanel />
+            </div>
           </div>
         </div>
       </div>

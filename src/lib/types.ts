@@ -1,4 +1,21 @@
-export type ThemeName = "romantic" | "elegant" | "minimal" | "cinematic";
+export type ThemeName =
+  | "romantic"
+  | "elegant"
+  | "minimal"
+  | "cinematic"
+  | "garden"
+  | "modern"
+  | "artdeco"
+  | "boho"
+  | "coastal"
+  | "vintage"
+  | "daisy"
+  | "rustic"
+  | "watercolor"
+  | "tropical"
+  | "whimsical"
+  | "regal"
+  | "industrial";
 
 export interface TimelineItem {
   label: string;
@@ -52,8 +69,6 @@ export type ConversationStep =
   | "name1"
   | "name2"
   | "theme"
-  | "color_motif"
-  | "color_confirm"
   | "tagline"
   | "tagline_confirm"
   // Phase 2: Event details
