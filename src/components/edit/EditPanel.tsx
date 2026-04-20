@@ -1,7 +1,6 @@
 "use client";
 
 import { useWedding } from "@/context/WeddingContext";
-import type { ThemeName } from "@/lib/types";
 import FormSection from "./FormSection";
 import FormField, { inputClass, selectClass, textareaClass } from "./FormField";
 import TimelineEditor from "./TimelineEditor";
@@ -12,7 +11,6 @@ import ImageUpload from "./ImageUpload";
 const FIELD_SECTION: Record<string, string> = {
   name1: "section-hero",
   name2: "section-hero",
-  theme: "section-hero",
   tagline: "section-hero",
   "colors.primary": "section-hero",
   "colors.accent": "section-hero",
@@ -70,35 +68,11 @@ export default function EditPanel() {
 
   return (
     <div className="flex h-full flex-col bg-[#FDFBF7]">
-      {/* Header */}
-      <div className="border-b border-[#EDE8E0] px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1A1A1A]">
-            <svg
-              className="h-4 w-4 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931z" />
-              <path d="M19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#1A1A1A]">Edit Details</p>
-            <p className="text-[11px] text-[#A09580]">Fine-tune every detail</p>
-          </div>
-        </div>
-      </div>
-
       {/* Scrollable form */}
       <div className="flex-1 overflow-y-auto px-4 py-5 space-y-5">
         {/* ── Section 1: Identity & Style ──────────────── */}
         <FormSection title="Identity & Style">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField label="First Name">
               <input
                 type="text"
@@ -121,23 +95,7 @@ export default function EditPanel() {
             </FormField>
           </div>
 
-          <FormField label="Theme">
-            <select
-              value={data.theme ?? "elegant"}
-              onChange={(e) => {
-                update({ theme: e.target.value as ThemeName });
-                scrollTo("theme");
-              }}
-              className={selectClass}
-            >
-              <option value="romantic">Romantic</option>
-              <option value="elegant">Elegant</option>
-              <option value="minimal">Minimal</option>
-              <option value="cinematic">Cinematic</option>
-            </select>
-          </FormField>
-
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField label="Primary Color">
               <div className="flex items-center gap-2">
                 <input

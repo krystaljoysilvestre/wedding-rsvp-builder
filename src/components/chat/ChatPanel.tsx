@@ -522,37 +522,6 @@ export default function ChatPanel() {
 
   return (
     <div className="flex h-full flex-col bg-[#FDFBF7]">
-      {/* Header */}
-      <div className="border-b border-[#EDE8E0] px-5 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#1A1A1A]">
-            <svg
-              className="h-4 w-4 text-white"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              {/* Heart */}
-              <path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z" />
-              {/* Code brackets */}
-              <path d="M9.5 10l-2 2 2 2" strokeWidth={2} />
-              <path d="M14.5 10l2 2-2 2" strokeWidth={2} />
-            </svg>
-          </div>
-          <div>
-            <p className="text-sm font-semibold text-[#1A1A1A]">
-              Coded with Love
-            </p>
-            <p className="text-[11px] text-[#A09580]">
-              Your AI wedding planner
-            </p>
-          </div>
-        </div>
-      </div>
-
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((msg, i) => (

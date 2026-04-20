@@ -41,7 +41,7 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
 
   return (
     <div className="border-t border-[#EDE8E0] p-3">
-      <div className="flex items-end gap-2 rounded-xl border border-[#E0D9CE] bg-white px-3 py-2 transition-shadow focus-within:border-[#B8A48E] focus-within:ring-2 focus-within:ring-[#D4C9B8]/30">
+      <div className="flex items-end gap-2 rounded-xl border border-[#E0D9CE] bg-white px-3 py-1.5 transition-shadow focus-within:border-[#B8A48E] focus-within:ring-2 focus-within:ring-[#D4C9B8]/30">
         <textarea
           ref={ref}
           rows={1}
@@ -50,7 +50,8 @@ export default function ChatInput({ onSend, disabled }: ChatInputProps) {
           onKeyDown={handleKeyDown}
           placeholder="Type your reply..."
           disabled={disabled}
-          className="flex-1 resize-none bg-transparent text-[13.5px] text-[#2C2C2C] placeholder:text-[#B8A48E] focus:outline-none disabled:opacity-40"
+          className="flex-1 resize-none border-none bg-transparent py-1 text-[13.5px] leading-5 text-[#2C2C2C] placeholder:text-[#B8A48E] focus:border-none focus:outline-none focus:ring-0 disabled:opacity-40"
+          style={{ boxShadow: "none" }}
         />
         <button
           type="button"

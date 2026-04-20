@@ -233,8 +233,8 @@ export default function WeddingPreview() {
 
   return (
     <div className="flex h-full flex-col bg-[#F0EDEA]">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5">
+      {/* Toolbar — hidden on mobile */}
+      <div className="hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex">
         <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
           Preview
         </p>

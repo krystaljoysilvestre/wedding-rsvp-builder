@@ -146,3 +146,15 @@ const themes: Record<ThemeName, ThemeConfig> = {
 export function getTheme(name?: ThemeName): ThemeConfig {
   return themes[name ?? "elegant"];
 }
+
+// Palette seeded into data.colors when a user picks a theme via the landing-page
+// card or the in-editor TemplateSwitcher. Only applied if the user hasn't already
+// customized colors.
+export const THEME_PALETTES: Record<ThemeName, { primary: string; accent: string }> = {
+  romantic: { primary: "#C4917B", accent: "#D4A995" },
+  elegant: { primary: "#0A0A0A", accent: "#404040" },
+  minimal: { primary: "#555555", accent: "#999999" },
+  cinematic: { primary: "#C9A96E", accent: "#B89A5F" },
+};
+
+export const THEME_NAMES: ThemeName[] = ["romantic", "elegant", "minimal", "cinematic"];

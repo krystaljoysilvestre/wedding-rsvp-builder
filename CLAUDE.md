@@ -17,6 +17,8 @@ No test framework is configured. Verify changes with `npm run build` (catches ty
 
 **Coded with Love** — an AI-powered conversational wedding website builder. Users chat with an AI planner to provide details (names, date, venue, story), and a live preview renders a cinematic wedding website in real time. A form-based Edit panel provides direct field editing alongside the chat.
 
+For the **target architecture and phase roadmap** (auth, Postgres, RSVP system, publishing, payments, admin dashboard), see [ARCHITECTURE.md](./ARCHITECTURE.md). Read it before architectural work.
+
 ## Architecture
 
 ### Routes
@@ -96,6 +98,7 @@ Three project skills are available:
 
 - `/preview-section` — Scaffold a new wedding template section (gallery, map, etc.) with correct props, theme integration, scroll targeting, and GSAP animation hooks
 - `/chat-step` — Add a new conversation step to the guided onboarding flow with proper type, handler, field mapping, and romantic tone
-- `/theme-variant` — Add a new visual theme (bohemian, rustic, etc.) with fonts, colors, ornaments, and landing page template card
+- `/theme-variant` — Add a new visual theme (bohemian, rustic, etc.) with fonts, colors, ornaments, and landing page template card. See [TEMPLATES.md](./TEMPLATES.md) for a non-technical contributor guide.
 
 @AGENTS.md
+@ARCHITECTURE.md

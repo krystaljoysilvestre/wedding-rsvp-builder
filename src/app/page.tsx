@@ -63,20 +63,20 @@ const FEATURES = [
   },
   {
     icon: "M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z",
-    title: "Romantic Themes",
-    desc: "Four hand-crafted themes — each with unique fonts, ornaments, colors, and animations.",
+    title: "Four distinct voices",
+    desc: "Romantic, Elegant, Minimal, Cinematic — each with its own typography, palette, and soul. Swap anytime.",
   },
   {
-    icon: "M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z",
-    title: "GSAP Animations",
-    desc: "Cinematic entrance effects, scroll reveals, parallax, and elegant micro-interactions.",
+    icon: "M17.982 18.725A7.488 7.488 0 0012 15.75a7.488 7.488 0 00-5.982 2.975m11.963 0a9 9 0 10-11.963 0m11.963 0A8.966 8.966 0 0112 21a8.966 8.966 0 01-5.982-2.275M15 9.75a3 3 0 11-6 0 3 3 0 016 0z",
+    title: "Know who's coming",
+    desc: "Send one personalized link. Every RSVP, meal choice, and plus-one lands in your private dashboard.",
   },
 ];
 
 const STEPS_DATA = [
-  { num: "01", title: "Whisper your story", desc: "Our AI planner asks the sweetest questions — your names, your date, the place where it all begins." },
-  { num: "02", title: "Watch love take shape", desc: "With every answer, your wedding website blooms in real time — cinematic, elegant, and entirely yours." },
-  { num: "03", title: "Share the joy", desc: "Preview it on any device, perfect every detail, then share the page that celebrates your forever." },
+  { num: "01", title: "Whisper your story", desc: "A sweet conversation asks the little things — your names, your date, the place where it all begins." },
+  { num: "02", title: "Watch love take shape", desc: "Every answer paints a new section. Every edit, instant. Your site is yours before you're done." },
+  { num: "03", title: "Send & track", desc: "One shareable link. Personal invites for every guest. Every 'yes' lands in your dashboard." },
 ];
 
 // ─── Floating particles ──────────────────────────────────────────────
@@ -448,9 +448,9 @@ export default function LandingPage() {
               color: "rgba(242, 232, 213, 0.5)",
             }}
           >
-            Because every love story deserves to be told beautifully.
-            Have a gentle conversation with AI, and watch as your
-            wedding website unfolds — like the first chapter of forever.
+            A wedding site, built by conversation. Watch your invitation
+            take shape as you answer. Every RSVP lands in one beautiful
+            dashboard.
           </p>
 
           {/* CTAs */}
@@ -545,7 +545,7 @@ export default function LandingPage() {
             {TEMPLATES.map((t, i) => (
               <Link
                 key={t.name}
-                href="/builder"
+                href={`/builder?theme=${t.name.toLowerCase()}`}
                 className={`lp-template-card group relative overflow-hidden rounded-lg opacity-0 transition-all duration-500 ${
                   activeTemplate === i
                     ? "scale-[1.02]"
@@ -746,9 +746,9 @@ export default function LandingPage() {
               className="mx-auto mt-4 max-w-md text-[15px] leading-relaxed"
               style={{ fontFamily: "var(--font-dm-sans)", color: "rgba(242, 232, 213, 0.35)" }}
             >
-              Let our AI planner guide you through a gentle conversation,
-              and in just a few minutes, your love story will have a home
-              as beautiful as the day you said yes.
+              A gentle conversation. A site that blooms as you speak.
+              Every RSVP, every guest, every plus-one — tracked in one
+              beautiful dashboard.
             </p>
             <Link
               href="/builder"
@@ -777,9 +777,6 @@ export default function LandingPage() {
               Coded with Love
             </span>
           </div>
-          <p className="text-[11px] text-[#F2E8D5]/20" style={{ fontFamily: "var(--font-dm-sans)" }}>
-            A portfolio project by a Senior Frontend Engineer
-          </p>
         </div>
       </footer>
     </div>
