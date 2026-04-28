@@ -1,9 +1,10 @@
 import type { ThemeName, WeddingData } from "./types";
 
 // Per-template fictional couples. Used in the builder preview so every section
-// renders with believable content from the first frame; each section stays
-// behind a `SectionLock` overlay until the user fills in the real data.
-// Also used by the `/preview-demo/[theme]` route (gallery + modal preview).
+// renders with believable content from the first frame; sections still showing
+// dummy content are tagged with a small "Suggested" badge until the user fills
+// in their own values. Also used by the `/preview-demo/[theme]` route (gallery
+// + modal preview), where badges and toggle-driven hides are disabled.
 
 export const DUMMY_DATA: Record<ThemeName, WeddingData> = {
   romantic: {
@@ -433,6 +434,64 @@ export const DUMMY_DATA: Record<ThemeName, WeddingData> = {
 };
 
 /**
+ * Shared dummy content for the optional sections — same sample across every
+ * theme so we don't need 17 copies. Per-theme palettes still drive how it's
+ * rendered.
+ */
+const SHARED_OPTIONAL_DUMMY: Partial<WeddingData> = {
+  ceremonyTime: "4:00 PM",
+  receptionTime: "6:00 PM — Late",
+  galleryImages: [
+    "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=800&q=80",
+    "https://images.unsplash.com/photo-1520854221256-17451cc331bf?w=800&q=80",
+    "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=800&q=80",
+    "https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=800&q=80",
+    "https://images.unsplash.com/photo-1517722014278-c256a91a6fba?w=800&q=80",
+    "https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=800&q=80",
+  ],
+  travelInfo:
+    "We've reserved a block of rooms at the Hotel Bellaria, a short walk from the venue. Mention our names at booking for the wedding rate.\n\nThe nearest airport is San Marco International (SMC), about 25 minutes by taxi. Parking is available on-site.",
+  registryLinks: [
+    { label: "Crate & Barrel", url: "https://www.crateandbarrel.com" },
+    { label: "Honeymoon Fund", url: "https://example.com/honeymoon" },
+    { label: "Amazon", url: "https://www.amazon.com" },
+  ],
+  faqItems: [
+    {
+      question: "What time should I arrive?",
+      answer:
+        "Please arrive 30 minutes before the ceremony so we can start on time.",
+    },
+    {
+      question: "Is there parking at the venue?",
+      answer:
+        "Yes — complimentary parking is available, and a valet service will be on-site.",
+    },
+    {
+      question: "Can I bring a plus-one?",
+      answer:
+        "Plus-ones are noted on individual invitations. Please RSVP with the names listed there.",
+    },
+    {
+      question: "Are children welcome?",
+      answer:
+        "We adore your little ones, but our wedding will be an adults-only celebration.",
+    },
+  ],
+  weddingParty: [
+    { name: "Sofia", role: "Maid of Honor" },
+    { name: "Daniel", role: "Best Man" },
+    { name: "Elena", role: "Bridesmaid" },
+    { name: "James", role: "Groomsman" },
+  ],
+  mapAddress: "Villa Bellaria\n12 Via del Mare\nPositano, Italy",
+  hashtag: "#OliviaAndHenry2026",
+  musicEmbed: "https://open.spotify.com/playlist/example",
+  saveTheDateMessage:
+    "We're getting married. Mark your calendars — the full invitation is on its way.",
+};
+
+/**
  * Merge dummy data with real user data — real values always win.
  * Used by the preview so every section shows believable content from frame one.
  */
@@ -441,7 +500,7 @@ export function withDummyFallback(
   real: WeddingData
 ): WeddingData {
   const dummy = DUMMY_DATA[theme ?? "elegant"];
-  const merged: WeddingData = { ...dummy };
+  const merged: WeddingData = { ...SHARED_OPTIONAL_DUMMY, ...dummy };
   (Object.keys(real) as (keyof WeddingData)[]).forEach((key) => {
     const v = real[key];
     if (v === undefined || v === null) return;

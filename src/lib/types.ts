@@ -27,6 +27,21 @@ export interface WeddingColors {
   accent: string;
 }
 
+export interface RegistryLink {
+  label: string;
+  url: string;
+}
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+
+export interface PartyMember {
+  name: string;
+  role: string;
+}
+
 export interface WeddingData {
   name1?: string;
   name2?: string;
@@ -36,8 +51,10 @@ export interface WeddingData {
   ceremonyType?: string;
   ceremonyVenue?: string;
   ceremonyAddress?: string;
+  ceremonyTime?: string;
   receptionVenue?: string;
   receptionAddress?: string;
+  receptionTime?: string;
   story?: string;
   welcomeMessage?: string;
   rsvpEnabled?: boolean;
@@ -49,6 +66,22 @@ export interface WeddingData {
   heroImage?: string;
   closingImage?: string;
   logoImage?: string;
+
+  // Optional sections
+  galleryImages?: string[];
+  travelInfo?: string;
+  registryLinks?: RegistryLink[];
+  faqItems?: FaqItem[];
+  weddingParty?: PartyMember[];
+  mapAddress?: string;
+  hashtag?: string;
+  musicEmbed?: string;
+  saveTheDateMessage?: string;
+
+  // User-customized section list — when set, overrides the theme's default
+  // `sections` array. Order matters; Hero is always force-pinned to slot 0
+  // by the renderer regardless of the array.
+  userSections?: import("./themes").SectionId[] | null;
 }
 
 export function displayNames(name1?: string, name2?: string): string {

@@ -38,26 +38,23 @@ export default function ViewportSwitcher({
           type="button"
           onClick={() => onChange(key)}
           title={label}
-          className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
+          aria-label={label}
+          className={`flex items-center justify-center rounded-md p-1.5 transition-colors ${
             active === key
               ? "bg-[#1A1A1A] text-white"
               : "text-gray-400 hover:text-gray-600"
           }`}
         >
           <svg
-            className="h-3.5 w-3.5"
+            className="h-4 w-4"
             fill="none"
             viewBox="0 0 24 24"
             stroke="currentColor"
             strokeWidth={1.5}
+            aria-hidden
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d={icon}
-            />
+            <path strokeLinecap="round" strokeLinejoin="round" d={icon} />
           </svg>
-          <span className="hidden sm:inline">{label}</span>
         </button>
       ))}
     </div>

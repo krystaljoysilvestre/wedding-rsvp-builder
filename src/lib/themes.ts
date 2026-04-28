@@ -2,6 +2,171 @@ import type { ThemeName } from "./types";
 
 export type OrnamentStyle = "floral" | "geometric" | "none" | "lines";
 
+// Each preview section has an ID. Themes pick which sections appear and in
+// what order via the `sections` array on ThemeConfig. Hero is conventionally
+// first, Closing last — themes vary the middle. Users can override theme
+// defaults via `data.userSections` (any subset of these, in any order, but
+// Hero is always force-pinned to the first slot).
+export type SectionId =
+  // Core sections (always available)
+  | "hero"
+  | "story"
+  | "countdown"
+  | "details"
+  | "timeline"
+  | "dresscode"
+  | "rsvp"
+  | "closing"
+  // Optional sections (some marked premium in SECTION_METADATA)
+  | "gallery"
+  | "travel"
+  | "registry"
+  | "faq"
+  | "weddingParty"
+  | "map"
+  | "hashtag"
+  | "saveTheDate";
+
+export interface SectionMeta {
+  id: SectionId;
+  label: string;
+  description: string;
+  isPremium?: boolean;
+}
+
+// Tiers group sections in the SectionManager's "Add more" list. Hero is
+// excluded — it's always pinned active, never shown in the inactive list.
+export type SectionTier = "personal" | "guests" | "extras";
+
+export const SECTION_TIER: Record<Exclude<SectionId, "hero">, SectionTier> = {
+  // Personal touch — content that tells the couple's story
+  story: "personal",
+  closing: "personal",
+  gallery: "personal",
+  weddingParty: "personal",
+  saveTheDate: "personal",
+  // Guest info — logistics for guests
+  details: "guests",
+  timeline: "guests",
+  dresscode: "guests",
+  travel: "guests",
+  map: "guests",
+  faq: "guests",
+  rsvp: "guests",
+  // Extras — fun additions
+  countdown: "extras",
+  registry: "extras",
+  hashtag: "extras",
+};
+
+export const TIER_META: Record<SectionTier, { label: string }> = {
+  personal: { label: "Personal touch" },
+  guests: { label: "Guest info" },
+  extras: { label: "Extras" },
+};
+
+// Catalog of every section the system knows about — drives the section
+// manager UI (label, description, lock indicator) and acts as the source
+// of truth for "what sections exist."
+export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
+  hero: {
+    id: "hero",
+    label: "Hero",
+    description: "The opening — names, date, and cover photo.",
+  },
+  story: {
+    id: "story",
+    label: "Our Story",
+    description: "How you met, written or AI-generated.",
+  },
+  countdown: {
+    id: "countdown",
+    label: "Countdown",
+    description: "Days, hours, minutes until the wedding.",
+  },
+  details: {
+    id: "details",
+    label: "Details",
+    description: "Ceremony and reception venue, address, time.",
+  },
+  timeline: {
+    id: "timeline",
+    label: "Timeline",
+    description: "Schedule of the day — ceremony, dinner, dancing.",
+  },
+  dresscode: {
+    id: "dresscode",
+    label: "Dress Code",
+    description: "What to wear — black tie, semi-formal, etc.",
+  },
+  rsvp: {
+    id: "rsvp",
+    label: "RSVP",
+    description: "Guests confirm attendance.",
+  },
+  closing: {
+    id: "closing",
+    label: "Closing Note",
+    description: "A final thank-you message to guests.",
+  },
+  gallery: {
+    id: "gallery",
+    label: "Gallery",
+    description: "Engagement photos and couple memories.",
+  },
+  travel: {
+    id: "travel",
+    label: "Travel",
+    description: "Hotels, airports, parking, transportation.",
+    isPremium: true,
+  },
+  registry: {
+    id: "registry",
+    label: "Registry",
+    description: "Gift links or honeymoon fund.",
+  },
+  faq: {
+    id: "faq",
+    label: "FAQ",
+    description: "Common guest questions answered.",
+  },
+  weddingParty: {
+    id: "weddingParty",
+    label: "Wedding Party",
+    description: "Bridesmaids, groomsmen, family.",
+    isPremium: true,
+  },
+  map: {
+    id: "map",
+    label: "Map",
+    description: "Embedded venue location.",
+    isPremium: true,
+  },
+  hashtag: {
+    id: "hashtag",
+    label: "Hashtag & Music",
+    description: "Wedding hashtag, song requests.",
+  },
+  saveTheDate: {
+    id: "saveTheDate",
+    label: "Save the Date",
+    description: "Pre-wedding announcement banner.",
+    isPremium: true,
+  },
+};
+
+// Default section order — themes that don't override get this.
+export const DEFAULT_SECTIONS: SectionId[] = [
+  "hero",
+  "story",
+  "countdown",
+  "details",
+  "timeline",
+  "dresscode",
+  "rsvp",
+  "closing",
+];
+
 export interface ThemeConfig {
   name: ThemeName;
   label: string;
@@ -30,6 +195,8 @@ export interface ThemeConfig {
   dividerWidth: number;
   sectionPadding: string;
   sectionPaddingMobile: string;
+  // Layout — which sections, in what order
+  sections: SectionId[];
   // Pricing (visual gating only for now — no auth/payments wired yet)
   isPremium?: boolean;
 }
@@ -38,6 +205,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   romantic: {
     name: "romantic",
     label: "Romantic",
+    sections: ["hero", "details", "rsvp"],
     bg: "#FDF8F4",
     bgAlt: "#FAF0E8",
     text: "#3D2B1F",
@@ -65,6 +233,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   elegant: {
     name: "elegant",
     label: "Elegant",
+    sections: ["hero", "details", "rsvp"],
     bg: "#FFFFFF",
     bgAlt: "#F5F5F5",
     text: "#0A0A0A",
@@ -92,6 +261,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   minimal: {
     name: "minimal",
     label: "Minimal",
+    sections: ["hero", "details", "rsvp"],
     bg: "#FAFAFA",
     bgAlt: "#F0F0F0",
     text: "#1A1A1A",
@@ -119,6 +289,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   cinematic: {
     name: "cinematic",
     label: "Cinematic",
+    sections: ["hero", "details", "rsvp"],
     bg: "#0C0C0C",
     bgAlt: "#151515",
     text: "#F2E8D5",
@@ -147,6 +318,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   garden: {
     name: "garden",
     label: "Garden",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F5F8ED",
     bgAlt: "#E6EFD4",
     text: "#2D4A2B",
@@ -174,6 +346,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   modern: {
     name: "modern",
     label: "Modern",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F8F6F2",
     bgAlt: "#EDE9E0",
     text: "#1A1A1A",
@@ -201,6 +374,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   artdeco: {
     name: "artdeco",
     label: "Art Deco",
+    sections: ["hero", "details", "rsvp"],
     bg: "#0D0D0D",
     bgAlt: "#1A1A1A",
     text: "#F5E6C8",
@@ -229,6 +403,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   boho: {
     name: "boho",
     label: "Boho Desert",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F2E6D0",
     bgAlt: "#E5D5B8",
     text: "#5C3A1F",
@@ -257,6 +432,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   coastal: {
     name: "coastal",
     label: "Coastal",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F0F6F9",
     bgAlt: "#D9E6EC",
     text: "#1F3D52",
@@ -285,6 +461,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   vintage: {
     name: "vintage",
     label: "Vintage",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F5EDE0",
     bgAlt: "#E8DCC8",
     text: "#3D2818",
@@ -313,6 +490,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   daisy: {
     name: "daisy",
     label: "Daisy",
+    sections: ["hero", "details", "rsvp"],
     bg: "#FFFFFF",
     bgAlt: "#F3F6FB",
     text: "#1B3A6B",
@@ -340,6 +518,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   rustic: {
     name: "rustic",
     label: "Rustic",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F5EBE0",
     bgAlt: "#E8D5B7",
     text: "#4A3626",
@@ -367,6 +546,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   watercolor: {
     name: "watercolor",
     label: "Watercolor",
+    sections: ["hero", "details", "rsvp"],
     bg: "#FBF8F3",
     bgAlt: "#F3EFE8",
     text: "#52495C",
@@ -394,6 +574,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   tropical: {
     name: "tropical",
     label: "Tropical",
+    sections: ["hero", "details", "rsvp"],
     bg: "#EDF5EE",
     bgAlt: "#D9E8DC",
     text: "#1F3A2C",
@@ -422,6 +603,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   whimsical: {
     name: "whimsical",
     label: "Whimsical",
+    sections: ["hero", "details", "rsvp"],
     bg: "#FEF6F4",
     bgAlt: "#F9E7E4",
     text: "#6B3E5C",
@@ -450,6 +632,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   regal: {
     name: "regal",
     label: "Regal",
+    sections: ["hero", "details", "rsvp"],
     bg: "#F8F2E6",
     bgAlt: "#EDE2CA",
     text: "#2D1B3A",
@@ -478,6 +661,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   industrial: {
     name: "industrial",
     label: "Industrial",
+    sections: ["hero", "details", "rsvp"],
     bg: "#EDECEA",
     bgAlt: "#D8D6D2",
     text: "#2B2B2B",

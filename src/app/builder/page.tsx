@@ -44,6 +44,14 @@ export default function BuilderPage() {
 
 function MobileLayout() {
   const [tab, setTab] = useState<MobileTab>("edit");
+  const { editTarget } = useWedding();
+
+  // Click-to-edit: a preview section was clicked while the user is on the
+  // Preview tab. Switch to Edit so the editor's own useEffect can take
+  // over (open the right step, scroll, highlight).
+  useEffect(() => {
+    if (editTarget) setTab("edit");
+  }, [editTarget]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#FDFBF7]">
@@ -111,16 +119,9 @@ function DesktopLayout() {
 
   return (
     <div className="flex h-screen overflow-hidden">
-      {/* Preview — left side */}
-      <div className="flex min-w-0 flex-1 flex-col">
-        <div className="min-w-0 flex-1 overflow-hidden">
-          <WeddingPreview />
-        </div>
-      </div>
-
-      {/* Right panel — collapsible */}
+      {/* Left panel — collapsible edit */}
       <div
-        className="relative flex shrink-0 border-l border-[#EDE8E0]"
+        className="relative flex shrink-0 border-r border-[#EDE8E0]"
         style={{
           width: panelOpen ? undefined : 48,
           transition: "width 600ms cubic-bezier(0.4, 0, 0.2, 1)",
@@ -139,26 +140,25 @@ function DesktopLayout() {
           <button
             type="button"
             onClick={() => setPanelOpen(true)}
-            className="group flex h-full w-full flex-col items-center justify-center gap-4 transition-colors hover:bg-[#FAF7F2]"
+            title="Open editor"
+            aria-label="Open editor"
+            className="group flex h-full w-full flex-col items-center justify-start pt-4 transition-colors hover:bg-[#FAF7F2]"
           >
-            <svg
-              className="h-4 w-4 text-[#B8A48E] transition-colors duration-300 group-hover:text-[#5C4F3D]"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={1.5}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M18.75 19.5l-7.5-7.5 7.5-7.5m-6 15L5.25 12l7.5-7.5"
-              />
-            </svg>
-            <span
-              className="text-[9px] font-medium uppercase tracking-[0.3em] text-[#B8A48E] transition-colors duration-300 group-hover:text-[#5C4F3D]"
-              style={{ writingMode: "vertical-rl", textOrientation: "mixed" }}
-            >
-              Edit
+            <span className="flex h-8 w-8 items-center justify-center rounded-md text-[#B8A48E] transition-colors duration-300 group-hover:bg-[#F5F3EF] group-hover:text-[#1A1A1A]">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+                aria-hidden
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                />
+              </svg>
             </span>
           </button>
         </div>
@@ -168,7 +168,7 @@ function DesktopLayout() {
           className="flex h-full w-full flex-col md:w-100 lg:w-105"
           style={{
             opacity: panelOpen ? 1 : 0,
-            transform: panelOpen ? "translateX(0)" : "translateX(20px)",
+            transform: panelOpen ? "translateX(0)" : "translateX(-20px)",
             pointerEvents: panelOpen ? "auto" : "none",
             transition:
               "opacity 400ms ease, transform 500ms cubic-bezier(0.4, 0, 0.2, 1)",
@@ -176,36 +176,45 @@ function DesktopLayout() {
           }}
         >
           {/* Header */}
-          <div className="flex items-center border-b border-[#EDE8E0] bg-[#FDFBF7] px-4 py-3">
+          <div className="flex items-center justify-between border-b border-[#EDE8E0] bg-[#FDFBF7] px-4 py-3">
+            <span className="text-[11px] font-medium uppercase tracking-[0.2em] text-[#1A1A1A]">
+              Edit your wedding
+            </span>
             <button
               type="button"
               onClick={() => setPanelOpen(false)}
-              className="text-[#D4C9B8] transition-colors hover:text-[#5C4F3D]"
-              title="Collapse panel"
+              title="Collapse editor"
+              aria-label="Collapse editor"
+              className="flex h-7 w-7 items-center justify-center rounded-md text-[#A09580] transition-colors hover:bg-[#F5F3EF] hover:text-[#1A1A1A]"
             >
               <svg
-                className="h-3.5 w-3.5"
+                className="h-4 w-4"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
                 strokeWidth={2}
+                aria-hidden
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M5.25 4.5l7.5 7.5-7.5 7.5m6-15l7.5 7.5-7.5 7.5"
+                  d="M15.75 19.5L8.25 12l7.5-7.5"
                 />
               </svg>
             </button>
-            <span className="ml-3 text-[11px] font-medium uppercase tracking-[0.2em] text-[#1A1A1A]">
-              Edit
-            </span>
           </div>
 
           {/* Edit panel */}
           <div className="flex-1 overflow-hidden">
             <EditPanel />
           </div>
+        </div>
+      </div>
+
+      {/* Preview — right side */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <div className="min-w-0 flex-1 overflow-hidden">
+          <WeddingPreview />
         </div>
       </div>
     </div>

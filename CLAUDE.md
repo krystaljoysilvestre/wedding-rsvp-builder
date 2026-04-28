@@ -15,7 +15,7 @@ No test framework is configured. Verify changes with `npm run build` (catches ty
 
 ## Project Overview
 
-**Coded with Love** — an AI-powered conversational wedding website builder. Users chat with an AI planner to provide details (names, date, venue, story), and a live preview renders a cinematic wedding website in real time. A form-based Edit panel provides direct field editing alongside the chat.
+**Coded with Love** — an AI-powered wedding website builder. The flow is form-first: users see a fully-rendered preview from frame one (with curated dummy content per template) and edit it through a step-based form on the side. AI is surfaced as inline assist (✨ Generate) on a few content fields (tagline, story, welcome, note-to-guests) — not as a chat driver.
 
 For the **target architecture and phase roadmap** (auth, Postgres, RSVP system, publishing, payments, admin dashboard), see [ARCHITECTURE.md](./ARCHITECTURE.md). Read it before architectural work.
 
@@ -23,60 +23,76 @@ For the **target architecture and phase roadmap** (auth, Postgres, RSVP system, 
 
 ### Routes
 
-- `/` — Marketing landing page with GSAP scroll animations
-- `/builder` — Main builder: split-screen with preview (left) + collapsible chat/edit panel (right)
-- `/api/generate` — OpenAI text generation (tagline, story, welcome, note, story_refine)
-- `/api/chat` — AI-powered free-form editing via structured JSON responses
+- `/` — Marketing landing page with GSAP scroll animations + template gallery + preview modal
+- `/builder` — Main builder: edit panel on the left, live preview on the right (collapsible). Mobile uses a Preview/Edit tab toggle.
+- `/preview-demo/[theme]` — Internal full-template preview used by gallery iframes and the modal preview. Uses `demoMode=true` so click-to-edit, hover affordances, and the onboarding hint are all suppressed.
+- `/api/generate` — OpenAI text generation (`tagline`, `story`, `welcome`, `note`, `story_refine`). Accepts an optional `tone` override that takes precedence over the theme tone in the prompt.
 
 ### State Flow
 
 All wedding data lives in `WeddingContext` (`src/context/WeddingContext.tsx`), a React Context providing:
-- `data: WeddingData` — the full website state (~20 fields)
-- `update(partial)` — shallow merge into data (triggers re-render in preview)
-- `scrollTarget` / `setScrollTarget` — tells preview to scroll to a section
-- `generating` / `setGenerating` — loading overlay state
-
-**Both ChatPanel and EditPanel read/write the same context.** Changes from either panel instantly update the preview.
-
-### Conversation Engine
-
-`src/lib/conversation.ts` defines a step-based flow with 27 steps across 5 phases. Each step has:
-- `message` — assistant's prompt text
-- `quickReplies` — optional button suggestions
-- `selectionOnly` — when true, text input is hidden (user must pick a button)
-- `field` — which WeddingData field this step writes to
-
-ChatPanel (`src/components/chat/ChatPanel.tsx`) uses a `stepRef` (not just state) to avoid stale closures in async handlers. This is critical — always read from `stepRef.current` inside `advanceConversation`.
+- `data: WeddingData` — the full website state
+- `update(partial)` — shallow merge into `data` (triggers re-render in preview)
+- `scrollTarget` / `setScrollTarget` — tells the preview to scroll to a specific section ID
+- `editTarget` / `setEditTarget` — set by preview-section clicks; consumed by `EditPanel` (opens the right step + scrolls + briefly highlights the field) and `MobileLayout` (auto-switches to the Edit tab)
+- `activeSections` / `setActiveSections` — preview sections that correspond to whatever step is currently open in the editor; drives the bidirectional "this is what I'm editing right now" highlight
+- `generating` / `setGenerating` — loading overlay state for AI calls
+- `demoMode: boolean` — when true, suppresses interactive affordances (click-to-edit, hover pills, onboarding hint). Used by `/preview-demo/[theme]`.
 
 ### Theme System
 
-`src/lib/themes.ts` defines 4 themes (romantic, elegant, minimal, cinematic), each with:
+`src/lib/themes.ts` defines **17 themes** (romantic, elegant, minimal, cinematic, garden, modern, artdeco, boho, coastal, vintage, daisy, rustic, watercolor, tropical, whimsical, regal, industrial). Each `ThemeConfig` includes:
 - Colors, typography (font family, weight, style), ornament style, section padding, border radius, hero/closing images
-- Google Fonts loaded in `layout.tsx` as CSS variables (`--font-cormorant`, `--font-playfair`, `--font-inter`, `--font-cinzel`, etc.)
+- `sections: SectionId[]` — **per-theme section curation**: which sections appear and in what order. Hero is conventionally first, Closing last; themes vary the middle. Minimal is stripped to 4 sections; Industrial leads with logistics; Cinematic puts countdown right after Hero, etc.
+- `isPremium?: boolean` — visual marker only; payment gating ships in Phase 5 of [ARCHITECTURE.md](./ARCHITECTURE.md).
+
+Google Fonts are loaded in `layout.tsx` as CSS variables (`--font-cormorant`, `--font-playfair`, `--font-inter`, `--font-cinzel`, etc.).
 
 Custom color motifs override theme accents in `WeddingPreview.tsx` via `useMemo` — hex colors map to curated Unsplash images per palette.
 
+### Section System
+
+There are **16 section types** in total, all enumerated by `SectionId` in `src/lib/themes.ts`:
+
+**Core (always available):** `hero`, `story`, `countdown`, `details`, `timeline`, `dresscode`, `rsvp`, `closing`
+
+**Optional:** `gallery`, `travel`, `registry`, `faq`, `weddingParty`, `map`, `hashtag`, `saveTheDate`
+
+Each section is registered in `SECTION_METADATA` with a `label`, `description`, and optional `isPremium` flag. The metadata catalog is the source of truth for the section manager UI and any "what sections exist?" lookup.
+
+**User-customized order:** When `data.userSections` is non-empty, it overrides the theme's default `sections` array. Hero is always force-pinned to slot 0 by the renderer regardless. Users manage this via the **SectionManager** in Step 4 of the editor (drag-to-reorder via `@dnd-kit/sortable`, plus add/remove).
+
+**Section rendering** in `WeddingPreview.tsx` is driven by a `sectionsById: Record<SectionId, ReactNode>` map and a `sectionList` derived from `data.userSections ?? theme.sections`. Toggle-gated sections (`countdown`, `rsvp`) resolve to `null` when their toggle is off in non-demoMode.
+
 ### API Routes
 
-**`/api/generate`** — Takes `{ type, names, theme, ... }`, returns `{ result: string }`. Five prompt templates for different content types. Falls back to hardcoded elegant copy on error.
-
-**`/api/chat`** — Takes `{ message, weddingData, history }`, returns `{ message, updates, suggestions, scrollTo }`. Uses OpenAI to detect intent and return structured field updates for non-linear editing.
+**`/api/generate`** — Takes `{ type, names, theme, tone?, input?, story?, instruction? }`, returns `{ result: string }`. Five prompt templates (`tagline`, `story`, `welcome`, `note`, `story_refine`). Falls back to hardcoded copy on error. The optional `tone` field overrides the theme tone — the AI Generate dropdown uses this to offer Romantic / Casual / Heartfelt / Witty / Cinematic variants.
 
 ### Image Handling
 
-`src/lib/image.ts` provides `processImage()` — resizes to max 1600x1200 via canvas, returns object URL. Designed for easy swap to Vercel Blob (replace object URL return with blob upload URL). Three image fields: `heroImage`, `closingImage`, `logoImage`.
+`src/lib/image.ts` provides `processImage()` — resizes to max 1600×1200 via canvas, returns an object URL. Designed for easy swap to Vercel Blob (replace object-URL return with blob upload URL). Image fields on `WeddingData`: `heroImage`, `closingImage`, `logoImage`, `galleryImages` (array).
 
 ## Key Patterns
 
-**Field → Section Mapping**: Both ChatPanel and EditPanel maintain maps (`STEP_TO_SECTION`, `FIELD_SECTION`) that connect data fields to preview section IDs (`section-hero`, `section-details`, etc.). When a field changes, `setScrollTarget` scrolls the preview to that section.
+**Field → Section Mapping**: `EditPanel.tsx` maintains two maps:
+- `FIELD_SECTION` (field name → preview section ID) — drives `setScrollTarget` when a field gets focus, so the preview scrolls to where the change will appear.
+- `FIELD_TO_STEP` (field name → step number 1/2/3/4 or "advanced") — used by the `editTarget` effect; preview-section clicks land on the right step.
 
-**Ornament Component**: `src/components/preview/Ornament.tsx` renders theme-appropriate decorative elements (floral leaves for romantic, geometric diamonds for elegant, nothing for minimal, lines for cinematic). Used consistently across all preview sections.
+**STEP_TO_SECTIONS** in `EditPanel.tsx` is the inverse — when a step is open, which preview sections light up as "active."
 
-**Separate Names**: Couple names are stored as `name1` and `name2` (not a single string). The `displayNames()` helper in `types.ts` combines them. Preview components receive both props directly — HeroSection renders them as separate animated elements.
+**Click-to-edit**: Each preview section is wrapped in `ClickToEdit` (defined inside `WeddingPreview.tsx`). Hover shows a small `Edit` pill in the top-right; click anywhere on the section sets `editTarget` to that section's primary field. The editor's `useEffect` watches `editTarget`, opens the matching step, scrolls to the field, briefly applies a `field-highlight` class. Disabled in `demoMode`.
+
+**Active-section sync**: When the user opens a step, `EditPanel` writes to `activeSections` based on `STEP_TO_SECTIONS`. Each `ClickToEdit` reads `active = activeSections.includes(id)` and renders a stronger ring + bg tint. A brief flash overlay (`section-activate-flash` keyframe in `globals.css`) plays when a section transitions into the active state.
+
+**Debounced field updates**: Text inputs use `DebouncedInput` / `DebouncedTextarea` from `BlurField.tsx` — they hold local state and commit to the wedding context 250ms after the last keystroke (with a flush on blur as a safety net). Selects, toggles, color pickers, and image uploads commit immediately.
+
+**Ornament Component**: `src/components/preview/Ornament.tsx` renders theme-appropriate decorative dividers (floral leaves for romantic, geometric diamonds for elegant, nothing for minimal, lines for cinematic). Used consistently across all preview sections.
+
+**Separate Names**: Couple names are stored as `name1` and `name2` (not a single string). The `displayNames()` helper in `types.ts` combines them. `HeroSection` renders them as separate animated elements (vertical Marisol / & / Tate stacking).
 
 **GSAP in Preview**: `WeddingPreview.tsx` manages all GSAP animations in a single `useEffect` with `gsap.context()`. Always call `ctx.revert()` in cleanup. ScrollTrigger uses the scroll container ref as `scroller`, not the window.
 
-**Hydration Safety**: The landing page uses pre-computed particle data (not `Math.random()`) to avoid SSR/client mismatches. Any randomized visual elements must be deterministic or rendered only in `useEffect`.
+**Hydration Safety**: `CountdownSection` initializes its time state to all-zeros and populates real values via `useEffect` — `Date.now()` differs between SSR and client and was breaking hydration. Any time-dependent or random visual elements must be deterministic or rendered only in `useEffect`. The landing page also uses pre-computed particle data (not `Math.random()`).
 
 ## Design Palette
 
@@ -94,13 +110,11 @@ Requires `OPENAI_API_KEY` in `.env.local` for AI features. The app works without
 
 ## Custom Skills
 
-Three project skills are available:
-
-- `/preview-section` — Scaffold a new wedding template section (gallery, map, etc.) with correct props, theme integration, scroll targeting, and GSAP animation hooks
-- `/chat-step` — Add a new conversation step to the guided onboarding flow with proper type, handler, field mapping, and romantic tone
-- `/theme-variant` — Add a new visual theme (bohemian, rustic, etc.) with fonts, colors, ornaments, and landing page template card. See [TEMPLATES.md](./TEMPLATES.md) for a non-technical contributor guide.
+- `/preview-section` — Scaffold a new wedding template section. After scaffolding, register the section in `SECTION_METADATA` (with `label` + `description` + optional `isPremium`), add it to `sectionsById` in `WeddingPreview.tsx`, add per-section dummy data to `SHARED_OPTIONAL_DUMMY` in `dummyData.ts`, and add an editor block in Step 4 of `EditPanel.tsx`.
+- `/theme-variant` — Add a new visual theme. Includes the `sections: SectionId[]` field on `ThemeConfig` for curating which sections appear and in what order. See [TEMPLATES.md](./TEMPLATES.md) for a non-technical contributor guide.
 
 For the broader visual-collaboration playbook (briefs that work, the brief→screenshot→critique loop, add-vs-refine judgment, palette refresh), see [DESIGN.md](./DESIGN.md).
 
 @AGENTS.md
 @ARCHITECTURE.md
+

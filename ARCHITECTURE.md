@@ -232,22 +232,24 @@ referrals (
 
 ## Current state (shipped)
 
-Phase 1 of the build is in production:
+Form-first builder with per-template section curation is in production:
 
 - Landing page template cards pass `?theme=` to `/builder` so the chosen template applies on arrival (`src/app/page.tsx`)
 - `ThemeQueryInitializer` in `src/app/builder/page.tsx` reads the query param, seeds `data.theme`, and (if colors aren't already customized) seeds `data.colors` from `THEME_PALETTES`
-- Persistent `TemplateSwitcher` component (`src/components/preview/TemplateSwitcher.tsx`) above the preview on desktop and above the tabs on mobile — click a pill to swap template live, all other answers preserved
-- `THEME_PALETTES` and `THEME_NAMES` exports in `src/lib/themes.ts`
-- Redundant Theme `<select>` removed from `EditPanel`
-
-Pre-existing, already working:
-
-- Chat onboarding flow with 27 steps across 5 phases (`src/lib/conversation.ts`)
-- Edit panel with live preview updates (`src/components/edit/EditPanel.tsx`)
-- 4 themes: Romantic, Elegant, Minimal, Cinematic (`src/lib/themes.ts`)
+- Template picker modal (`src/components/edit/TemplatePicker.tsx`) opens from a "Change" link in Step 1 — visual grid of all 17 templates with thumbnails + premium badges
+- `THEME_PALETTES` and `THEME_NAMES` exports in `src/lib/themes.ts`; `SECTION_METADATA` catalog of all 16 section types
+- **17 themes**: Romantic, Elegant, Minimal, Cinematic, Garden, Modern, Art Deco, Boho, Coastal, Vintage, Daisy, Rustic, Watercolor, Tropical, Whimsical, Regal, Industrial — each with its own `sections: SectionId[]` curating which sections appear and in what order (Hero pinned first)
+- **16 section types**: 8 core (hero, story, countdown, details, timeline, dresscode, rsvp, closing) + 8 optional (gallery, travel, registry, faq, weddingParty, map, hashtag, saveTheDate). Some optional sections are marked `isPremium` (visual badge only — payment gating ships in Phase 5)
+- Section manager UI in Step 4 of `EditPanel` with drag-to-reorder via `@dnd-kit/sortable` (mouse + touch + keyboard support); user override stored as `data.userSections`
+- Form-first editor: 4 collapsible steps + Advanced. Step 1 = essentials & introduction; Step 2 = the love story; Step 3 = logistics; Step 4 = section manager + content for any optional sections enabled
+- Click-to-edit + active-section highlight: clicking a preview section opens the matching step + scrolls to the field; whichever step is open lights up its corresponding preview section
+- AI surfaced as inline assist (`✨ Generate` dropdown) on tagline, story, welcome, and note-to-guests — with optional tone overrides (Romantic / Casual / Heartfelt / Witty / Cinematic)
+- Debounced field updates (`DebouncedInput` / `DebouncedTextarea`, 250ms) for typing fields; instant commit for selects, toggles, color pickers, image uploads
 - GSAP animations in the preview (`src/components/preview/WeddingPreview.tsx`)
-- OpenAI endpoints: `/api/generate` (content), `/api/chat` (free-form editing), `/api/validate` (input validation)
-- Mobile-responsive builder via `useIsMobile` (`src/lib/useIsMobile.ts`)
+- OpenAI endpoint: `/api/generate` (content) — accepts an optional `tone` override
+- Mobile-responsive builder via `useIsMobile` (`src/lib/useIsMobile.ts`); 2-tab Preview/Edit layout on mobile
+
+The earlier chat-driven onboarding (27-step `conversation.ts`, `ChatPanel`, `/api/chat`, `/api/validate`) was removed when the builder moved to form-first.
 
 Everything is currently single-user, in-memory, no auth, no persistence.
 
@@ -332,7 +334,7 @@ Key files: `proxy.ts`, `src/lib/domains/vercel.ts`, `src/app/_published/[slug]/p
 - `users.role = 'admin'` gate in `proxy.ts` + per-page server check
 - `/admin` overview (users, active sites, monthly revenue, refunds, signups)
 - `/admin/users`, `/admin/sites`, `/admin/templates`, `/admin/finance`
-- `template_events` logging wired up in `TemplateSwitcher`, publish flow, chat/edit theme changes
+- `template_events` logging wired up in `TemplatePicker` (modal), publish flow, edit-panel theme changes
 - All destructive admin actions write to `admin_audit`
 
 Key files: `src/app/admin/*`, `src/lib/data/admin.ts`, `src/components/admin/*`.
@@ -343,12 +345,13 @@ Key files: `src/app/admin/*`, `src/lib/data/admin.ts`, `src/components/admin/*`.
 
 - Shareable draft preview: `/preview/[siteId]` (signed URL or owner auth)
 - QR code modal in builder header
-- ✨ Regenerate button next to AI-generated fields in EditPanel
-- `is_premium` flag on templates (static config keyed by theme name)
-- Lock icon in `TemplateSwitcher` for premium templates when `sites.tier !== 'paid'`
-- Tier check at publish
+- ✨ Regenerate now lives inline on each AI-generated field via the AI Generate dropdown — already shipped
+- `isPremium` flag on themes (`ThemeConfig.isPremium`) and on sections (`SectionMeta.isPremium`) — already shipped as visual badges
+- Lock icon in template picker modal and section manager — already shipped (visual only)
+- Tier check at publish — wire `isPremium` on theme + on any selected section to gate publish flow
+- Tier check at publish for premium-section attribution
 
-Key files: `src/app/preview/[siteId]/page.tsx`, `src/components/builder/ShareDraftButton.tsx`, `src/components/builder/QrPreviewModal.tsx`, `src/components/edit/RegenerateButton.tsx`, `src/lib/templates.ts`.
+Key files: `src/app/preview/[siteId]/page.tsx`, `src/components/builder/ShareDraftButton.tsx`, `src/components/builder/QrPreviewModal.tsx`, `src/lib/templates.ts`.
 
 ## Post-launch opportunities
 
@@ -385,8 +388,8 @@ Not part of the v1 roadmap. Called out here because the data model / architectur
 
 ## Conventions Claude should follow
 
-- **`stepRef.current` pattern** in async handlers to avoid stale closures (see `ChatPanel.tsx`).
-- **Field → Section mapping:** `FIELD_SECTION` in `EditPanel.tsx` and `STEP_TO_SECTION` in `ChatPanel.tsx`. New fields need entries here so the preview scrolls correctly.
+- **Field → Section mapping:** `FIELD_SECTION` in `EditPanel.tsx` (field name → preview section ID, drives onFocus → setScrollTarget) and `FIELD_TO_STEP` in the same file (field name → which step contains it, drives click-to-edit navigation). New fields need entries in both so the form/preview stay in sync.
+- **Section registry:** `SECTION_METADATA` in `themes.ts` is the source of truth for what sections exist. Adding a new section requires entries in `SECTION_METADATA`, `sectionsById` in `WeddingPreview.tsx`, and `SHARED_OPTIONAL_DUMMY` in `dummyData.ts`. See the `/preview-section` skill.
 - **Warm palette values:** backgrounds `#FDFBF7 / #FAF7F2 / #F5F3EF`, borders `#EDE8E0 / #E0D9CE / #DDD5CA`, text `#1A1A1A / #2C2C2C / #5C4F3D / #8B7355`, muted `#A09580 / #B8A48E / #C4B8A4 / #D4C9B8`. Match these for any new builder UI.
 - **Server actions for mutations.** Route handlers reserved for webhooks, OAuth callbacks, and the existing AI endpoints.
 - **Drizzle for DB access.** No raw SQL except in migration files.

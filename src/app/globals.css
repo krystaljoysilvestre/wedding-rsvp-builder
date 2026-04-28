@@ -155,3 +155,36 @@ select {
   0%, 100% { opacity: 0.7; transform: scale(1); }
   50%      { opacity: 1;   transform: scale(1.08); }
 }
+
+/* Brief outline + bg pulse on a form field after click-to-edit lands on it. */
+@keyframes fieldHighlight {
+  0% {
+    box-shadow: 0 0 0 0 rgba(26, 26, 26, 0.35);
+    background-color: rgba(26, 26, 26, 0.04);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(26, 26, 26, 0.12);
+    background-color: rgba(26, 26, 26, 0.04);
+  }
+  100% {
+    box-shadow: 0 0 0 8px rgba(26, 26, 26, 0);
+    background-color: transparent;
+  }
+}
+
+.field-highlight {
+  animation: fieldHighlight 1.2s ease-out;
+  border-radius: 0.5rem;
+}
+
+/* When a preview section becomes the active step, a stronger ring + bg
+   overlay flashes briefly on top of its persistent active state — gives
+   the "preview just reacted" feedback. */
+@keyframes sectionActivateFlash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.section-activate-flash {
+  animation: sectionActivateFlash 800ms ease-out;
+}

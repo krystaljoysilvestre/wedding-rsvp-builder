@@ -15,36 +15,38 @@ Body font:     <Google Font name, or a vibe; default: a sans-serif>
 Ornament:      floral | geometric | lines | none   (or propose a new style)
 Hero image:    <Unsplash URL or search term>
 Closing image: <Unsplash URL or search term>
+Sections:      <ordered list of section ids — leave blank to inherit DEFAULT_SECTIONS>
 ```
 
-If any field is missing, ask the user once for that specific field, then proceed. Don't ask the user to fill in hex values themselves — derive them from the vibe + palette description.
+If any field is missing, ask the user once for that specific field, then proceed. Don't ask the user to fill in hex values themselves — derive them from the vibe + palette description. If `Sections` is blank, use the 8-item `DEFAULT_SECTIONS` from `themes.ts`. Otherwise, the new theme curates its own subset/order — Hero must be in the list (it's force-pinned anyway, but include it for clarity).
+
+The 16 valid `SectionId` values: `hero`, `story`, `countdown`, `details`, `timeline`, `dresscode`, `rsvp`, `closing`, `gallery`, `travel`, `registry`, `faq`, `weddingParty`, `map`, `hashtag`, `saveTheDate`. See `SECTION_METADATA` in `src/lib/themes.ts`.
 
 ## Files to update
 
 1. **`src/lib/types.ts`** — add the slug to `ThemeName` union.
 2. **`src/app/layout.tsx`** — import Google Fonts, add `variable: "--font-<slug>"`, add the variable to the `<html>` className.
 3. **`src/lib/themes.ts`** — three updates:
-   - Add the full `ThemeConfig` entry to the `themes` object.
+   - Add the full `ThemeConfig` entry to the `themes` object — including the `sections: SectionId[]` field for per-theme section curation.
    - Add a `{ primary, accent }` entry to `THEME_PALETTES` (seeded into `data.colors` when the template is chosen).
-   - Add the slug to `THEME_NAMES` (order matters — this is the order in the TemplateSwitcher).
+   - Add the slug to `THEME_NAMES` (order matters — this is the order in the template picker modal).
 4. **`src/components/preview/Ornament.tsx`** — only if the brief asks for a new ornament style, add a new SVG branch and extend `OrnamentStyle` in `themes.ts`.
-5. **`src/lib/conversation.ts`** — add the label to the `theme` step's `quickReplies` array.
-6. **`src/components/chat/ChatPanel.tsx`** — add the slug to the `themeMap` in the theme step handler (around line 240).
-7. **`src/components/preview/TemplateSwitcher.tsx`** — add an entry to the local `TEMPLATES` array with `{ name, label, swatch }`.
-8. **`src/app/page.tsx`** — add to the landing-page `TEMPLATES` array with hero image URL, 3 swatch colors (bg, accent, text), CSS font variable, and a short description.
+5. **`src/app/page.tsx`** — add to the landing-page `TEMPLATES` array with hero image URL, 3 swatch colors (bg, accent, text), CSS font variable, and a short description.
+
+(Note: the previous chat-based onboarding is gone — there's no `conversation.ts` or `ChatPanel.tsx` to update anymore. The template picker modal is `src/components/edit/TemplatePicker.tsx`, which reads from `THEME_NAMES` automatically — no edit needed there.)
 
 ## Verification
 
 - `npm run build` — passes with no type errors.
 - `npm run dev`, visit `/` — new template card appears in the landing gallery.
-- Visit `/builder?theme=<slug>` — preview loads with the new palette, fonts, and ornament.
-- Click through TemplateSwitcher pills — swap is smooth, other fields preserved.
-- Start a chat at `/builder`, reach the theme step — the new label appears as a quick reply.
+- Visit `/builder?theme=<slug>` — preview loads with the new palette, fonts, and ornament; the curated section list renders in the right order.
+- Click "Change" in Step 1 of the editor → template picker modal opens → new template appears with its swatches.
 
 ## Design principles
 
-- **Distinct, not reskinned.** A new template should feel noticeably different from the existing 4 in typography, spacing, OR ornament — ideally all three.
-- **Contrast matters.** Dark themes need WCAG AA contrast on body text. Romantic/Elegant/Minimal/Cinematic all pass — check yours.
+- **Distinct, not reskinned.** A new template should feel noticeably different from the existing 17 in typography, spacing, ornament, OR section structure — ideally several of these.
+- **Use the section list for differentiation.** Same colors but a different section order/subset already produces a noticeably different site. Minimal is 4 sections; Cinematic leads with countdown; Industrial is logistics-forward. Your template's structure should match its character.
+- **Contrast matters.** Dark themes need WCAG AA contrast on body text — check yours.
 - **One hero moment.** Each template has a signature move: Romantic's florals, Elegant's geometric crispness, Minimal's negative space, Cinematic's gold. Your new template should have one too.
 - **Two-font max.** A display/heading font + a body font. More than two starts to feel cluttered.
 
@@ -55,10 +57,9 @@ This skill owns file-edit mechanics. For the taste layer — when to add a theme
 ## Reference: read Elegant first
 
 Elegant is the most boilerplate-like. Read it end-to-end before adding a new template:
-- `src/lib/themes.ts` → `elegant` config
+- `src/lib/themes.ts` → `elegant` config (note the `sections` field)
 - `src/components/preview/Ornament.tsx` → the `geometric` branch
 - `src/app/page.tsx` → the `Elegant` entry in `TEMPLATES`
 - `src/app/layout.tsx` → the Playfair + DM Sans font registration
-- `src/components/preview/TemplateSwitcher.tsx` → the `elegant` pill
 
 Every new template needs an analog in each of those places.

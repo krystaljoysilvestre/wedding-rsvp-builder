@@ -7,7 +7,6 @@ import type { Viewport } from "./ViewportSwitcher";
 interface TemplateHeaderProps {
   name1?: string;
   name2?: string;
-  date?: string;
   logoImage?: string;
   theme: ThemeConfig;
   viewport: Viewport;
@@ -25,7 +24,6 @@ function getInitials(name1?: string, name2?: string): string {
 export default function TemplateHeader({
   name1,
   name2,
-  date,
   logoImage,
   theme,
   viewport,
@@ -33,14 +31,13 @@ export default function TemplateHeader({
   const [menuOpen, setMenuOpen] = useState(false);
   const isMobile = viewport === "mobile";
   const initials = getInitials(name1, name2);
-  const fullName = name1 && name2 ? `${name1} & ${name2}` : name1 || name2;
   const logoSize = isMobile ? 34 : 38;
   const logoRadius =
     theme.name === "minimal" ? 6 : theme.name === "cinematic" ? 0 : "50%";
 
   return (
     <header
-      className="sticky top-0 z-20"
+      className="sticky top-0 z-30"
       style={{
         background: `${theme.bg}F2`,
         backdropFilter: "blur(12px)",
@@ -117,45 +114,6 @@ export default function TemplateHeader({
             </div>
           )}
 
-          <div>
-            {fullName ? (
-              <p
-                className="font-light tracking-tight"
-                style={{
-                  color: theme.text,
-                  fontFamily: theme.headingFont,
-                  fontSize: isMobile ? 14 : 16,
-                }}
-              >
-                {fullName}
-              </p>
-            ) : (
-              <p
-                className="font-light tracking-tight"
-                style={{
-                  color: theme.textMuted,
-                  fontFamily: theme.headingFont,
-                  fontSize: isMobile ? 14 : 16,
-                }}
-              >
-                Coded with Love
-              </p>
-            )}
-            {date && (
-              <p
-                className="uppercase"
-                style={{
-                  color: theme.textMuted,
-                  fontFamily: theme.bodyFont,
-                  fontSize: 9,
-                  letterSpacing: "0.25em",
-                  marginTop: 1,
-                }}
-              >
-                {date}
-              </p>
-            )}
-          </div>
         </div>
 
         {/* Desktop nav */}

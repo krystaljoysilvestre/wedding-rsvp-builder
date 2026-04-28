@@ -157,8 +157,12 @@ export default function ImageUpload({
           </>
         )}
       </div>
-      {error && (
+      {error ? (
         <p className="mt-1.5 text-[11px] text-red-500">{error}</p>
+      ) : (
+        <p className="mt-1.5 text-[11px] italic text-gray-500">
+          You can change this anytime.
+        </p>
       )}
       <input
         ref={inputRef}

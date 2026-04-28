@@ -4,11 +4,17 @@ interface FormFieldProps {
   label: string;
   children: ReactNode;
   action?: ReactNode;
+  id?: string;
 }
 
-export default function FormField({ label, children, action }: FormFieldProps) {
+export default function FormField({
+  label,
+  children,
+  action,
+  id,
+}: FormFieldProps) {
   return (
-    <div>
+    <div id={id}>
       <div className="mb-1.5 flex items-center justify-between">
         <label
           className="block text-[12px] font-medium"

@@ -1,10 +1,17 @@
 "use client";
 
-import { useRef, useEffect, useState, useMemo } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useMemo,
+  Fragment,
+  type ReactNode,
+} from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useWedding } from "@/context/WeddingContext";
-import { getTheme } from "@/lib/themes";
+import { getTheme, type SectionId } from "@/lib/themes";
 import { withDummyFallback } from "@/lib/dummyData";
 import ViewportSwitcher, { type Viewport } from "./ViewportSwitcher";
 import TemplateHeader from "./TemplateHeader";
@@ -16,7 +23,14 @@ import CountdownSection from "./CountdownSection";
 import DressCodeSection from "./DressCodeSection";
 import RsvpSection from "./RsvpSection";
 import ClosingSection from "./ClosingSection";
-import SectionLock from "./SectionLock";
+import GallerySection from "./GallerySection";
+import TravelSection from "./TravelSection";
+import RegistrySection from "./RegistrySection";
+import FaqSection from "./FaqSection";
+import WeddingPartySection from "./WeddingPartySection";
+import MapSection from "./MapSection";
+import HashtagSection from "./HashtagSection";
+import SaveTheDateSection from "./SaveTheDateSection";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -26,13 +40,97 @@ const VIEWPORT_MAX_WIDTH: Record<Viewport, string> = {
   mobile: "375px",
 };
 
+// Wraps a preview section so clicking it opens the matching editor field.
+// Disabled in demoMode (gallery iframes, modal preview) where there's no
+// editor to open.
+function ClickToEdit({
+  id,
+  field,
+  enabled,
+  active,
+  onActivate,
+  children,
+}: {
+  id: string;
+  field: string;
+  enabled: boolean;
+  active: boolean;
+  onActivate: (field: string) => void;
+  children: ReactNode;
+}) {
+  // Brief flash overlay when this section first becomes active, so the
+  // preview clearly "reacts" to the editor step change. Lives on top of
+  // the persistent active state and fades out over 800ms.
+  const [justActivated, setJustActivated] = useState(false);
+  useEffect(() => {
+    if (!active) return;
+    setJustActivated(true);
+    const t = setTimeout(() => setJustActivated(false), 800);
+    return () => clearTimeout(t);
+  }, [active]);
+
+  if (!enabled) {
+    return <div id={id}>{children}</div>;
+  }
+  // Active = "this is what the user is editing right now" — clearly
+  // stronger ring + visible bg tint, always on (no hover required).
+  // Inactive = subtle ring on hover, no bg tint.
+  const stateClass = active
+    ? "ring-2 ring-[#1A1A1A]/45 ring-inset bg-[#1A1A1A]/[0.05]"
+    : "hover:ring-2 hover:ring-[#1A1A1A]/12 hover:ring-inset";
+
+  return (
+    <div
+      id={id}
+      onClick={() => onActivate(field)}
+      className={`group relative cursor-pointer transition-all duration-200 ${stateClass}`}
+    >
+      {children}
+      {justActivated && (
+        <div
+          aria-hidden
+          className="section-activate-flash pointer-events-none absolute inset-0 z-10 bg-[#1A1A1A]/10 ring-2 ring-[#1A1A1A]/70 ring-inset"
+        />
+      )}
+
+    </div>
+  );
+}
+
+const ONBOARDING_HINT_KEY = "cwl_onboarding_hint_seen";
+
 export default function WeddingPreview() {
-  const { data, generating, scrollTarget, setScrollTarget, demoMode } = useWedding();
+  const { data, generating, scrollTarget, setScrollTarget, demoMode, setEditTarget, activeSections } = useWedding();
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // One-time onboarding hint: shows on first ever load, fades after 5s,
+  // never returns. Skipped entirely in demoMode (gallery / modal preview).
+  const [hintState, setHintState] = useState<"hidden" | "visible" | "fading">(
+    "hidden",
+  );
+  useEffect(() => {
+    if (demoMode) return;
+    if (typeof window === "undefined") return;
+    if (window.localStorage.getItem(ONBOARDING_HINT_KEY)) return;
+    setHintState("visible");
+    const fadeTimer = window.setTimeout(() => {
+      setHintState("fading");
+      window.localStorage.setItem(ONBOARDING_HINT_KEY, "1");
+    }, 2500);
+    const hideTimer = window.setTimeout(
+      () => setHintState("hidden"),
+      3200,
+    );
+    return () => {
+      window.clearTimeout(fadeTimer);
+      window.clearTimeout(hideTimer);
+    };
+  }, [demoMode]);
   const baseTheme = getTheme(data.theme);
   // Merge real user data over per-template dummy data so every section
-  // always has believable content. Sections stay behind a SectionLock
-  // overlay until the user fills the unlocking field(s).
+  // always has believable content. Sections still showing dummy content
+  // surface a small "Suggested" badge until the user fills the primary
+  // field for that section.
   const displayData = useMemo(() => withDummyFallback(data.theme, data), [data]);
 
   // Merge custom color motif into theme — colors, images, overlay
@@ -294,15 +392,298 @@ export default function WeddingPreview() {
     return () => ctx.revert();
   }, [data, theme, viewport]);
 
+  // Resolve which sections to render: user override (if set) or theme default.
+  // Hero is always force-pinned to the first slot.
+  const sectionList = useMemo<SectionId[]>(() => {
+    const base =
+      data.userSections && data.userSections.length > 0
+        ? data.userSections
+        : theme.sections;
+    const withoutHero = base.filter((id) => id !== "hero");
+    return ["hero", ...withoutHero];
+  }, [data.userSections, theme.sections]);
+
+  // Each section's full JSX, keyed by SectionId. Toggle-gated sections
+  // (countdown, rsvp) resolve to null when their toggle is off in non-demoMode.
+  const sectionsById: Record<SectionId, ReactNode> = {
+    hero: (
+      <ClickToEdit
+        id="section-hero"
+        field="name1"
+        enabled={!demoMode}
+        active={activeSections.includes("section-hero")}
+        onActivate={setEditTarget}
+      >
+        <HeroSection
+          name1={displayData.name1}
+          name2={displayData.name2}
+          date={displayData.date}
+          tagline={displayData.tagline}
+          customImage={data.heroImage ?? displayData.heroImage}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    story: (
+      <ClickToEdit
+        id="section-story"
+        field="story"
+        enabled={!demoMode}
+        active={activeSections.includes("section-story")}
+        onActivate={setEditTarget}
+      >
+        <StorySection
+          story={displayData.story}
+          welcomeMessage={displayData.welcomeMessage}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    countdown:
+      demoMode || data.countdownEnabled ? (
+        <ClickToEdit
+          id="section-countdown"
+          field="countdownEnabled"
+          enabled={!demoMode}
+          active={activeSections.includes("section-countdown")}
+          onActivate={setEditTarget}
+        >
+          <CountdownSection
+            date={displayData.date ?? ""}
+            theme={theme}
+            viewport={viewport}
+          />
+        </ClickToEdit>
+      ) : null,
+    details: (
+      <ClickToEdit
+        id="section-details"
+        field="ceremonyVenue"
+        enabled={!demoMode}
+        active={activeSections.includes("section-details")}
+        onActivate={setEditTarget}
+      >
+        <DetailsSection
+          date={displayData.date}
+          ceremonyType={displayData.ceremonyType}
+          ceremonyVenue={displayData.ceremonyVenue}
+          ceremonyAddress={displayData.ceremonyAddress}
+          ceremonyTime={displayData.ceremonyTime}
+          receptionVenue={displayData.receptionVenue}
+          receptionAddress={displayData.receptionAddress}
+          receptionTime={displayData.receptionTime}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    timeline: (
+      <ClickToEdit
+        id="section-timeline"
+        field="timeline"
+        enabled={!demoMode}
+        active={activeSections.includes("section-timeline")}
+        onActivate={setEditTarget}
+      >
+        <TimelineSection
+          timeline={displayData.timeline ?? []}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    dresscode: (
+      <ClickToEdit
+        id="section-dresscode"
+        field="dressCode"
+        enabled={!demoMode}
+        active={activeSections.includes("section-dresscode")}
+        onActivate={setEditTarget}
+      >
+        <DressCodeSection
+          dressCode={displayData.dressCode ?? ""}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    rsvp:
+      demoMode || data.rsvpEnabled ? (
+        <ClickToEdit
+          id="section-rsvp"
+          field="rsvpEnabled"
+          enabled={!demoMode}
+          active={activeSections.includes("section-rsvp")}
+          onActivate={setEditTarget}
+        >
+          <RsvpSection theme={theme} viewport={viewport} />
+        </ClickToEdit>
+      ) : null,
+    closing: (
+      <ClickToEdit
+        id="section-closing"
+        field="noteToGuests"
+        enabled={!demoMode}
+        active={activeSections.includes("section-closing")}
+        onActivate={setEditTarget}
+      >
+        <ClosingSection
+          name1={displayData.name1}
+          name2={displayData.name2}
+          noteToGuests={displayData.noteToGuests}
+          customImage={data.closingImage ?? displayData.closingImage}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    gallery: (
+      <ClickToEdit
+        id="section-gallery"
+        field="galleryImages"
+        enabled={!demoMode}
+        active={activeSections.includes("section-gallery")}
+        onActivate={setEditTarget}
+      >
+        <GallerySection
+          images={displayData.galleryImages ?? []}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    travel: (
+      <ClickToEdit
+        id="section-travel"
+        field="travelInfo"
+        enabled={!demoMode}
+        active={activeSections.includes("section-travel")}
+        onActivate={setEditTarget}
+      >
+        <TravelSection
+          travelInfo={displayData.travelInfo ?? ""}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    registry: (
+      <ClickToEdit
+        id="section-registry"
+        field="registryLinks"
+        enabled={!demoMode}
+        active={activeSections.includes("section-registry")}
+        onActivate={setEditTarget}
+      >
+        <RegistrySection
+          links={displayData.registryLinks ?? []}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    faq: (
+      <ClickToEdit
+        id="section-faq"
+        field="faqItems"
+        enabled={!demoMode}
+        active={activeSections.includes("section-faq")}
+        onActivate={setEditTarget}
+      >
+        <FaqSection
+          items={displayData.faqItems ?? []}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    weddingParty: (
+      <ClickToEdit
+        id="section-weddingParty"
+        field="weddingParty"
+        enabled={!demoMode}
+        active={activeSections.includes("section-weddingParty")}
+        onActivate={setEditTarget}
+      >
+        <WeddingPartySection
+          members={displayData.weddingParty ?? []}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    map: (
+      <ClickToEdit
+        id="section-map"
+        field="mapAddress"
+        enabled={!demoMode}
+        active={activeSections.includes("section-map")}
+        onActivate={setEditTarget}
+      >
+        <MapSection
+          address={displayData.mapAddress ?? ""}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    hashtag: (
+      <ClickToEdit
+        id="section-hashtag"
+        field="hashtag"
+        enabled={!demoMode}
+        active={activeSections.includes("section-hashtag")}
+        onActivate={setEditTarget}
+      >
+        <HashtagSection
+          hashtag={displayData.hashtag ?? ""}
+          musicEmbed={displayData.musicEmbed}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+    saveTheDate: (
+      <ClickToEdit
+        id="section-saveTheDate"
+        field="saveTheDateMessage"
+        enabled={!demoMode}
+        active={activeSections.includes("section-saveTheDate")}
+        onActivate={setEditTarget}
+      >
+        <SaveTheDateSection
+          message={displayData.saveTheDateMessage ?? ""}
+          date={displayData.date}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
+  };
+
   return (
     <div className="flex h-full flex-col bg-[#F0EDEA]">
       {/* Toolbar — hidden on mobile */}
       {!demoMode && (
         <div className="hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex">
-          <p className="text-[12px] italic text-gray-500">
-            Preview your site
-          </p>
+          <p className="text-[12px] font-medium text-gray-500">Preview</p>
           <ViewportSwitcher active={viewport} onChange={setViewport} />
+        </div>
+      )}
+
+      {/* One-time onboarding hint — shows once, fades after 5s, never returns. */}
+      {!demoMode && hintState !== "hidden" && (
+        <div
+          aria-live="polite"
+          className={`border-b border-gray-200 bg-white/60 px-4 py-2 text-center transition-opacity duration-700 ${
+            hintState === "fading" ? "opacity-0" : "opacity-100"
+          }`}
+        >
+          <p className="text-[12px] italic text-gray-500">
+            Click any section to edit your content
+          </p>
         </div>
       )}
 
@@ -348,130 +729,14 @@ export default function WeddingPreview() {
           >
             <TemplateHeader
               name1={displayData.name1} name2={displayData.name2}
-              date={displayData.date}
               logoImage={data.logoImage}
               theme={theme}
               viewport={viewport}
             />
 
-            <div id="section-hero">
-              <SectionLock
-                locked={demoMode ? false : !data.name1 || !data.name2}
-                hint="Add your names"
-                overlayBg={theme.bg}
-              >
-                <HeroSection
-                  name1={displayData.name1} name2={displayData.name2}
-                  date={displayData.date}
-                  tagline={displayData.tagline}
-                  customImage={data.heroImage ?? displayData.heroImage}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
-
-            <div id="section-story">
-              <SectionLock
-                locked={demoMode ? false : !data.story && !data.welcomeMessage}
-                hint="Share your story"
-                overlayBg={theme.bg}
-              >
-                <StorySection
-                  story={displayData.story}
-                  welcomeMessage={displayData.welcomeMessage}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
-
-            <div id="section-countdown">
-              <SectionLock
-                locked={demoMode ? false : !data.countdownEnabled || !data.date}
-                hint="Turn on the countdown"
-                overlayBg={theme.bg}
-              >
-                <CountdownSection
-                  date={displayData.date ?? ""}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
-
-            <div id="section-details">
-              <SectionLock
-                locked={demoMode ? false : !data.ceremonyVenue && !data.date}
-                hint="Add your venue"
-                overlayBg={theme.bg}
-              >
-                <DetailsSection
-                  date={displayData.date}
-                  ceremonyType={displayData.ceremonyType}
-                  ceremonyVenue={displayData.ceremonyVenue}
-                  ceremonyAddress={displayData.ceremonyAddress}
-                  receptionVenue={displayData.receptionVenue}
-                  receptionAddress={displayData.receptionAddress}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
-
-            <div id="section-timeline">
-              <SectionLock
-                locked={demoMode ? false : !data.timeline || data.timeline.length === 0}
-                hint="Add your timeline"
-                overlayBg={theme.bg}
-              >
-                <TimelineSection
-                  timeline={displayData.timeline ?? []}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
-
-            <div id="section-dresscode">
-              <SectionLock
-                locked={demoMode ? false : !data.dressCode}
-                hint="Set a dress code"
-                overlayBg={theme.bg}
-              >
-                <DressCodeSection
-                  dressCode={displayData.dressCode ?? ""}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
-
-            <div id="section-rsvp">
-              <SectionLock
-                locked={demoMode ? false : !data.rsvpEnabled}
-                hint="Turn on RSVP"
-                overlayBg={theme.bg}
-              >
-                <RsvpSection theme={theme} viewport={viewport} />
-              </SectionLock>
-            </div>
-
-            <div id="section-closing">
-              <SectionLock
-                locked={demoMode ? false : !data.noteToGuests && (!data.name1 || !data.name2)}
-                hint="Leave a note for guests"
-                overlayBg={theme.bg}
-              >
-                <ClosingSection
-                  name1={displayData.name1} name2={displayData.name2}
-                  noteToGuests={displayData.noteToGuests}
-                  customImage={data.closingImage ?? displayData.closingImage}
-                  theme={theme}
-                  viewport={viewport}
-                />
-              </SectionLock>
-            </div>
+            {sectionList.map((id) => (
+              <Fragment key={id}>{sectionsById[id]}</Fragment>
+            ))}
           </div>
         </div>
       </div>

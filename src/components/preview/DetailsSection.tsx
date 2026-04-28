@@ -7,8 +7,10 @@ interface DetailsSectionProps {
   ceremonyType?: string;
   ceremonyVenue?: string;
   ceremonyAddress?: string;
+  ceremonyTime?: string;
   receptionVenue?: string;
   receptionAddress?: string;
+  receptionTime?: string;
   theme: ThemeConfig;
   viewport: Viewport;
 }
@@ -18,8 +20,10 @@ export default function DetailsSection({
   ceremonyType,
   ceremonyAddress,
   ceremonyVenue,
+  ceremonyTime,
   receptionVenue,
   receptionAddress,
+  receptionTime,
   theme,
   viewport,
 }: DetailsSectionProps) {
@@ -109,16 +113,18 @@ export default function DetailsSection({
                 {ceremonyAddress}
               </p>
             )}
-            <p
-              className="mt-2"
-              style={{
-                color: theme.textMuted,
-                fontFamily: theme.bodyFont,
-                fontSize: 14,
-              }}
-            >
-              4:00 PM
-            </p>
+            {ceremonyTime && (
+              <p
+                className="mt-2"
+                style={{
+                  color: theme.textMuted,
+                  fontFamily: theme.bodyFont,
+                  fontSize: 14,
+                }}
+              >
+                {ceremonyTime}
+              </p>
+            )}
           </div>
 
           {/* Reception */}
@@ -172,16 +178,18 @@ export default function DetailsSection({
                   {receptionAddress}
                 </p>
               )}
-              <p
-                className="mt-2"
-                style={{
-                  color: theme.textMuted,
-                  fontFamily: theme.bodyFont,
-                  fontSize: 14,
-                }}
-              >
-                6:00 PM &mdash; Late
-              </p>
+              {receptionTime && (
+                <p
+                  className="mt-2"
+                  style={{
+                    color: theme.textMuted,
+                    fontFamily: theme.bodyFont,
+                    fontSize: 14,
+                  }}
+                >
+                  {receptionTime}
+                </p>
+              )}
             </div>
           )}
         </div>

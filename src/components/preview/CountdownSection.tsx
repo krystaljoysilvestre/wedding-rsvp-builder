@@ -29,11 +29,21 @@ export default function CountdownSection({
   theme,
   viewport,
 }: CountdownSectionProps) {
-  const [time, setTime] = useState(getTimeLeft(date ?? ""));
+  // Initialize to zeros so SSR and the first client render produce identical
+  // markup. The real countdown is populated in useEffect (client-only) to
+  // avoid a hydration mismatch from Date.now() differing between server and
+  // client.
+  const [time, setTime] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const isMobile = viewport === "mobile";
 
   useEffect(() => {
     if (!date) return;
+    setTime(getTimeLeft(date));
     const id = setInterval(() => setTime(getTimeLeft(date)), 1000);
     return () => clearInterval(id);
   }, [date]);

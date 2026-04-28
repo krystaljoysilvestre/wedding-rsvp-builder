@@ -62,7 +62,7 @@ export default function AIGenerateButton({
   }
 
   const primaryLabel = hasValue ? "Regenerate" : "Generate";
-  const primaryIcon = hasValue ? "↻" : "✨";
+  const PrimaryIcon = hasValue ? RefreshIcon : SparkleIcon;
 
   return (
     <div className="relative" ref={ref}>
@@ -94,7 +94,7 @@ export default function AIGenerateButton({
             />
           </svg>
         ) : (
-          <span aria-hidden>{primaryIcon}</span>
+          <PrimaryIcon />
         )}
         {loading ? "Generating…" : primaryLabel}
         {!loading && (
@@ -122,7 +122,7 @@ export default function AIGenerateButton({
             onClick={() => generate()}
             className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-[12px] font-medium text-[#1A1A1A] hover:bg-[#FAF7F2]"
           >
-            <span aria-hidden>{primaryIcon}</span>
+            <PrimaryIcon />
             {primaryLabel}
           </button>
           <div className="my-1 border-t border-[#EDE8E0]" />
@@ -142,5 +142,45 @@ export default function AIGenerateButton({
         </div>
       )}
     </div>
+  );
+}
+
+// ─── Inline icons (heroicons-style outline) ──────────────────────────
+
+function SparkleIcon() {
+  return (
+    <svg
+      className="h-3 w-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
+      />
+    </svg>
+  );
+}
+
+function RefreshIcon() {
+  return (
+    <svg
+      className="h-3 w-3"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+      aria-hidden
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M16.023 9.348h4.992V4.356M2.985 19.644v-4.992m0 0h4.992m-4.993 0l3.181 3.183a8.25 8.25 0 0011.667 0l3.181-3.183m-3.181-13.45a8.25 8.25 0 00-11.667 0l-3.181 3.183m0 0V9.348m0-4.992h4.992"
+      />
+    </svg>
   );
 }
