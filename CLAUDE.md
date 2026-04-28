@@ -100,5 +100,7 @@ Three project skills are available:
 - `/chat-step` — Add a new conversation step to the guided onboarding flow with proper type, handler, field mapping, and romantic tone
 - `/theme-variant` — Add a new visual theme (bohemian, rustic, etc.) with fonts, colors, ornaments, and landing page template card. See [TEMPLATES.md](./TEMPLATES.md) for a non-technical contributor guide.
 
+For the broader visual-collaboration playbook (briefs that work, the brief→screenshot→critique loop, add-vs-refine judgment, palette refresh), see [DESIGN.md](./DESIGN.md).
+
 @AGENTS.md
 @ARCHITECTURE.md

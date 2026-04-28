@@ -299,8 +299,8 @@ export default function WeddingPreview() {
       {/* Toolbar — hidden on mobile */}
       {!demoMode && (
         <div className="hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex">
-          <p className="text-[11px] font-medium uppercase tracking-wider text-gray-400">
-            Preview
+          <p className="text-[12px] italic text-gray-500">
+            Preview your site
           </p>
           <ViewportSwitcher active={viewport} onChange={setViewport} />
         </div>

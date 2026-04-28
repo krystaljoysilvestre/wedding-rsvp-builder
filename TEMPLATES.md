@@ -58,6 +58,10 @@ A new template is done when:
 - ☐ It feels *visibly different* from the other four — not a reskin.
 - ☐ `npm run build` passes.
 
+## Going deeper
+
+This guide covers adding one new theme. For the broader design-with-Claude workflow — refining existing themes, palette work, ornament variants, and the brief→screenshot→critique loop — see [DESIGN.md](./DESIGN.md).
+
 ## Not sure where to start?
 
 Easiest path: take one of the existing four and riff on it. "Cinematic but lighter" or "Romantic with a nighttime mood" are legit starting points. Ask Claude: *"Show me how Elegant is configured, then build a new template called Moody based on it."*

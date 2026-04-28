@@ -339,7 +339,7 @@ Key files: `src/app/admin/*`, `src/lib/data/admin.ts`, `src/components/admin/*`.
 
 ### Phase 8 — Polish + Premium Template Machinery
 
-**Goal:** Last-mile UX + framework for paid templates later.
+**Goal:** Last-mile UX + framework for paid templates later. Design-quality polish guidance (add vs. refine, palette refresh, premium-tier considerations) lives in [DESIGN.md](./DESIGN.md).
 
 - Shareable draft preview: `/preview/[siteId]` (signed URL or owner auth)
 - QR code modal in builder header

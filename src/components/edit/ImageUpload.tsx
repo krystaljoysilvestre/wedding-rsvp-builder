@@ -103,12 +103,14 @@ export default function ImageUpload({
 
   return (
     <div>
-      <p
-        className="mb-2 text-[11px] font-medium uppercase tracking-[0.15em]"
-        style={{ color: "#8B7355" }}
-      >
-        {label}
-      </p>
+      {label && (
+        <p
+          className="mb-1.5 text-[12px] font-medium"
+          style={{ color: "#5C4F3D" }}
+        >
+          {label}
+        </p>
+      )}
       <div
         role="button"
         tabIndex={0}

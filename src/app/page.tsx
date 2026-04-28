@@ -5,6 +5,7 @@ import Link from "next/link";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import TemplatePreviewModal from "@/components/landing/TemplatePreviewModal";
+import LandingHeader from "@/components/landing/LandingHeader";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -128,9 +129,9 @@ const TEMPLATES: Template[] = [
     slug: "coastal",
     name: "Coastal",
     tier: "premium",
-    desc: "Watercolor blues, airy spacing, and breezy serifs for seaside 'I do's.",
+    desc: "Sun-warmed terracotta against sea blue — a Mediterranean cliffside at golden hour.",
     image: "https://images.unsplash.com/photo-1518895949257-7621c3c786d7?w=800&q=80",
-    colors: ["#F0F6F9", "#4A7898", "#1F3D52"],
+    colors: ["#F0F6F9", "#B68B6A", "#1F3D52"],
     font: "var(--font-cormorant), serif",
   },
   {
@@ -680,6 +681,8 @@ export default function LandingPage() {
 
   return (
     <div ref={pageRef} className="overflow-x-hidden">
+      <LandingHeader />
+
       {/* ─── Hero ─────────────────────────────────────── */}
       <section className="lp-hero relative flex min-h-screen flex-col items-center justify-center overflow-hidden bg-[#0A0A0A] px-6">
         {/* Bg image with parallax */}
@@ -900,7 +903,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── How It Works ─────────────────────────────── */}
-      <section className="bg-white px-6 py-28 sm:py-36">
+      <section id="how" className="bg-white px-6 py-28 sm:py-36">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <p
@@ -955,7 +958,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Features ─────────────────────────────────── */}
-      <section className="bg-[#FAFAF8] px-6 py-28 sm:py-36">
+      <section id="features" className="bg-[#FAFAF8] px-6 py-28 sm:py-36">
         <div className="mx-auto max-w-5xl">
           <div className="text-center">
             <p

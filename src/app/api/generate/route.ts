@@ -6,29 +6,34 @@ interface GenerateRequest {
   type: "tagline" | "story" | "welcome" | "note" | "story_refine";
   names?: string;
   theme?: string;
+  tone?: string;
   input?: string;
   story?: string;
   instruction?: string;
 }
 
+function toneOf(b: GenerateRequest): string {
+  return b.tone || b.theme || "elegant";
+}
+
 const PROMPTS: Record<string, (body: GenerateRequest) => string> = {
   tagline: (b) =>
     `Write a short, romantic wedding tagline (under 10 words) for ${b.names}. ` +
-    `Tone: ${b.theme}. Return ONLY the tagline text, no quotes.`,
+    `Tone: ${toneOf(b)}. Return ONLY the tagline text, no quotes.`,
 
   story: (b) =>
     `Write a short, elegant love story (3-4 sentences, under 80 words) for ${b.names}. ` +
-    `Based on this input: "${b.input}". Tone: ${b.theme}. ` +
+    `Based on this input: "${b.input}". Tone: ${toneOf(b)}. ` +
     `Write in third person. Return ONLY the story text.`,
 
   welcome: (b) =>
     `Write a warm wedding welcome message (2-3 sentences, under 60 words) for ${b.names}. ` +
-    `Tone: ${b.theme}. This is for their wedding website homepage. ` +
+    `Tone: ${toneOf(b)}. This is for their wedding website homepage. ` +
     `Return ONLY the message text.`,
 
   note: (b) =>
     `Write a short, heartfelt note to wedding guests (2 sentences, under 40 words) from ${b.names}. ` +
-    `Tone: ${b.theme}. Return ONLY the note text.`,
+    `Tone: ${toneOf(b)}. Return ONLY the note text.`,
 
   story_refine: (b) =>
     `Rewrite this wedding love story with the following adjustment: "${b.instruction}"\n\n` +

@@ -48,6 +48,10 @@ If any field is missing, ask the user once for that specific field, then proceed
 - **One hero moment.** Each template has a signature move: Romantic's florals, Elegant's geometric crispness, Minimal's negative space, Cinematic's gold. Your new template should have one too.
 - **Two-font max.** A display/heading font + a body font. More than two starts to feel cluttered.
 
+## Design judgment
+
+This skill owns file-edit mechanics. For the taste layer — when to add a theme vs. refine an existing one, how to brief Claude for visual work, the screenshot/critique loop — see [DESIGN.md](../../../DESIGN.md).
+
 ## Reference: read Elegant first
 
 Elegant is the most boilerplate-like. Read it end-to-end before adding a new template:

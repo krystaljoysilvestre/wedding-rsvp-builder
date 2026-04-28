@@ -3,6 +3,8 @@ name: preview-section
 description: Create a new preview section for the wedding template. Use when adding a new visual section to the wedding website preview (e.g. gallery, map, accommodation).
 ---
 
+For the visual-design considerations this skill doesn't cover (rhythm with neighboring sections, ornament continuity, mobile breakpoint feel), see [DESIGN.md](../../../DESIGN.md) section 7.
+
 When creating a new preview section:
 
 1. Create `src/components/preview/{SectionName}Section.tsx`
