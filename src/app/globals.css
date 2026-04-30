@@ -188,3 +188,90 @@ select {
 .section-activate-flash {
   animation: sectionActivateFlash 800ms ease-out;
 }
+
+/* StepProgress check pop — fires when a chip's content swaps from a
+   step number to the checkmark SVG (state transitions to "complete").
+   The conditional render in StepProgress.tsx mounts a fresh <svg>, which
+   triggers this keyframe on appearance. Overshoot easing makes the pop
+   feel rewarding without being garish. */
+@keyframes stepCheckPop {
+  0%   { transform: scale(0);   opacity: 0; }
+  60%  { transform: scale(1.3); opacity: 1; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+.step-check-pop {
+  animation: stepCheckPop 450ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* StepProgress dot pulse — paired with the check pop. A subtle outward
+   ring radiates from the chip when it transitions into the "complete"
+   state, drawing the eye to the change. The chip itself stays the same
+   size; the ring is a transparent outline that scales + fades out. */
+@keyframes stepDotPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(26, 26, 26, 0.35); }
+  100% { box-shadow: 0 0 0 10px rgba(26, 26, 26, 0); }
+}
+
+.step-dot-pulse {
+  animation: stepDotPulse 600ms ease-out both;
+}
+
+/* Step tab fade-in — applied to the panel wrapper via a `key` change so
+   each tab switch plays the animation fresh. Subtle: 4px slide + opacity
+   over ~250ms. Keeps the transition feeling polished without stealing
+   attention from the form. */
+@keyframes tabFadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.tab-fade-in {
+  animation: tabFadeIn 250ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* AI shimmer-sparkle trigger: gentle opacity pulse so users notice the
+   icon-only AI button is interactive. On parent-button hover, the pulse
+   pauses at full opacity (stable hover state) and the icon scales up. */
+@keyframes shimmerPulse {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+.shimmer-pulse {
+  animation: shimmerPulse 2.4s ease-in-out infinite;
+}
+
+.group:hover > .shimmer-pulse {
+  animation-play-state: paused;
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.shimmer-pulse {
+  transition: transform 200ms ease-out;
+}
+
+/* Step-completion line celebration — icon springs in, text follows after
+   a beat. Plays once when the line first mounts (i.e. when the step's
+   completion conditions just became satisfied). */
+@keyframes completionIconPop {
+  0%   { transform: scale(0.4) rotate(-45deg); opacity: 0; }
+  55%  { transform: scale(1.25) rotate(8deg);  opacity: 1; }
+  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+}
+
+@keyframes completionTextFade {
+  from { opacity: 0; transform: translateX(-6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.completion-icon {
+  display: inline-flex;
+  animation: completionIconPop 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+.completion-text {
+  animation: completionTextFade 500ms ease-out 180ms both;
+}
+

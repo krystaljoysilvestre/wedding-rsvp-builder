@@ -71,13 +71,13 @@ export const TIER_META: Record<SectionTier, { label: string }> = {
 export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
   hero: {
     id: "hero",
-    label: "Hero",
-    description: "The opening — names, date, and cover photo.",
+    label: "Cover",
+    description: "Names, date, and cover photo.",
   },
   story: {
     id: "story",
     label: "Our Story",
-    description: "How you met, written or AI-generated.",
+    description: "How the two of you met.",
   },
   countdown: {
     id: "countdown",
@@ -87,37 +87,37 @@ export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
   details: {
     id: "details",
     label: "Details",
-    description: "Ceremony and reception venue, address, time.",
+    description: "When and where it's happening.",
   },
   timeline: {
     id: "timeline",
     label: "Timeline",
-    description: "Schedule of the day — ceremony, dinner, dancing.",
+    description: "Schedule of the day.",
   },
   dresscode: {
     id: "dresscode",
     label: "Dress Code",
-    description: "What to wear — black tie, semi-formal, etc.",
+    description: "What guests should wear.",
   },
   rsvp: {
     id: "rsvp",
     label: "RSVP",
-    description: "Guests confirm attendance.",
+    description: "Where guests confirm they're coming.",
   },
   closing: {
     id: "closing",
     label: "Closing Note",
-    description: "A final thank-you message to guests.",
+    description: "A final thank-you to guests.",
   },
   gallery: {
     id: "gallery",
     label: "Gallery",
-    description: "Engagement photos and couple memories.",
+    description: "Photos of the two of you.",
   },
   travel: {
     id: "travel",
     label: "Travel",
-    description: "Hotels, airports, parking, transportation.",
+    description: "How to get there and where to stay.",
     isPremium: true,
   },
   registry: {
@@ -128,29 +128,29 @@ export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
   faq: {
     id: "faq",
     label: "FAQ",
-    description: "Common guest questions answered.",
+    description: "Answers to common guest questions.",
   },
   weddingParty: {
     id: "weddingParty",
     label: "Wedding Party",
-    description: "Bridesmaids, groomsmen, family.",
+    description: "Your bridesmaids, groomsmen, and family.",
     isPremium: true,
   },
   map: {
     id: "map",
     label: "Map",
-    description: "Embedded venue location.",
+    description: "An embedded map of the venue.",
     isPremium: true,
   },
   hashtag: {
     id: "hashtag",
     label: "Hashtag & Music",
-    description: "Wedding hashtag, song requests.",
+    description: "Your hashtag and a music playlist.",
   },
   saveTheDate: {
     id: "saveTheDate",
     label: "Save the Date",
-    description: "Pre-wedding announcement banner.",
+    description: "A heads-up before the invitation arrives.",
     isPremium: true,
   },
 };

@@ -215,7 +215,9 @@ referrals (
 | `/dashboard` | User's site list | Authenticated |
 | `/i/[slug]` | Free-tier published invite (watermarked) | Public |
 | `/r/[token]` | Guest RSVP page (per guest group) | Token-gated, no account |
-| `/preview/[siteId]` | Owner-only shareable draft preview | Signed URL or owner |
+| `/preview` | **(Interim, shipped)** Owner-only fullscreen draft preview. Hydrates from `localStorage`, so other browsers/sessions see a fallback. | localStorage-tied (interim) → real auth in Phase 2 |
+| `/preview/[siteId]` | **(Phase 2+ target)** Owner-only shareable draft preview with a signed URL or session-bound auth. Replaces / supersets the `/preview` interim route. | Signed URL or owner |
+| `/share` | **(Removed pending auth)** Previously hosted a URL-hash preview for partner-share. Removed because watermarks weren't a real bypass guard for premium content. Returns post-auth as a signed `/preview/[siteId]?token=…` URL. | — |
 | `/admin/*` | Admin overview, users, sites, templates, finance | `users.role = 'admin'` |
 | `/_published/[slug]` | Internal render target for subdomain / custom-domain rewrites | Public via proxy.ts |
 | `/api/auth/[...nextauth]` | Auth.js endpoints | Public |
@@ -278,6 +280,20 @@ Everything is currently single-user, in-memory, no auth, no persistence.
 - `WeddingContext` becomes auth-aware: debounced autosave to `site_versions` when authenticated, localStorage fallback when anonymous
 - "Save your work" CTA in builder header triggers sign-in; on first authenticated load, localStorage draft migrates to a new `sites` row
 - New routes: `/builder/[siteId]`, `/dashboard`
+- **Replace `/preview` interim auth proxy.** Today's `/preview` route uses
+  `localStorage` as a poor-man's session check (see
+  [src/app/preview/page.tsx](src/app/preview/page.tsx) — it's not a security
+  guarantee, just deters casual link sharing). When auth lands, swap that
+  for a real session check + signed `/preview/[siteId]?token=…` URL. The
+  ReviewModal "Open in new tab" link should regenerate accordingly.
+- **Reintroduce partner-share as a signed URL.** The interim `/share`
+  route + `ShareDraftButton` were removed once it became clear watermarks
+  couldn't gate premium content properly. Bring sharing back here, this
+  time as `/preview/[siteId]?token=…` — owner-bound, expirable, revocable,
+  and premium-aware (paid templates still rendered for the partner since
+  they're sharing within the same paid account; anonymous link recipients
+  get watermarked free-theme rendering or a sign-in wall depending on the
+  owner's tier).
 
 Key files: `src/lib/db/schema.ts`, `src/lib/auth.ts`, `proxy.ts`, `src/lib/data/sites.ts`, `src/app/builder/[siteId]/page.tsx`, `src/app/dashboard/page.tsx`.
 

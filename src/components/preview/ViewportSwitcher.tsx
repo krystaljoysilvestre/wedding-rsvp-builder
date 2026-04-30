@@ -31,7 +31,7 @@ export default function ViewportSwitcher({
   onChange,
 }: ViewportSwitcherProps) {
   return (
-    <div className="inline-flex items-center gap-0.5 rounded-lg border border-gray-200 bg-white p-0.5">
+    <div className="inline-flex items-center gap-0.5 rounded-full border border-[#EDE8E0] bg-white/85 p-1 shadow-md backdrop-blur-md">
       {VIEWPORTS.map(({ key, label, icon }) => (
         <button
           key={key}
@@ -39,10 +39,10 @@ export default function ViewportSwitcher({
           onClick={() => onChange(key)}
           title={label}
           aria-label={label}
-          className={`flex items-center justify-center rounded-md p-1.5 transition-colors ${
+          className={`flex h-8 w-8 items-center justify-center rounded-full transition-colors ${
             active === key
               ? "bg-[#1A1A1A] text-white"
-              : "text-gray-400 hover:text-gray-600"
+              : "text-[#A09580] hover:text-[#5C4F3D]"
           }`}
         >
           <svg

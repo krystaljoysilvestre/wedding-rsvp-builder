@@ -19,7 +19,7 @@ export default function StepProgress({
   onStepClick,
 }: StepProgressProps) {
   return (
-    <div className="mb-7 flex items-start">
+    <div className="flex items-start">
       {steps.map((step, i) => {
         const stepNumber = i + 1;
         const isActive = activeStep === stepNumber;
@@ -29,28 +29,35 @@ export default function StepProgress({
             ? "active"
             : "future";
 
-        const circleClasses =
+        const dotClasses =
           state === "complete"
-            ? "border-[#1A1A1A] bg-[#1A1A1A] text-white"
+            ? "border-transparent bg-[#1A1A1A] text-white"
             : state === "active"
-              ? "border-[#1A1A1A] bg-[#1A1A1A] text-white ring-2 ring-[#1A1A1A]/15 ring-offset-2 ring-offset-[#FDFBF7]"
+              ? "border-transparent bg-[#1A1A1A] text-white ring-2 ring-[#1A1A1A]/10 ring-offset-2 ring-offset-[#FDFBF7]"
               : "border-[#E0D9CE] bg-white text-[#A09580]";
 
         const labelClasses =
           state === "active"
-            ? "text-[#1A1A1A] font-semibold"
+            ? "text-[#1A1A1A] font-medium"
             : state === "complete"
-              ? "text-[#5C4F3D] font-medium"
-              : "text-[#A09580] font-medium";
+              ? "text-[#5C4F3D]"
+              : "text-[#A09580]";
 
         const StepInner = (
-          <div className="flex flex-col items-center gap-2">
+          <div className="flex flex-col items-center gap-1.5">
             <div
-              className={`flex h-6 w-6 items-center justify-center rounded-full border text-[11px] font-medium transition-all duration-300 ${circleClasses}`}
+              // The `key` flips when the chip enters "complete", remounting
+              // the dot so the `step-dot-pulse` ring animation fires on
+              // entry. Other transitions reuse the existing element so the
+              // color tween via `transition-all` stays smooth.
+              key={state === "complete" ? "complete" : "not-complete"}
+              className={`flex h-5 w-5 items-center justify-center rounded-full border text-[10px] font-medium transition-all duration-300 ${dotClasses} ${
+                state === "complete" ? "step-dot-pulse" : ""
+              }`}
             >
               {state === "complete" ? (
                 <svg
-                  className="h-3 w-3"
+                  className="step-check-pop h-2.5 w-2.5"
                   viewBox="0 0 12 12"
                   fill="none"
                   aria-hidden
@@ -68,7 +75,7 @@ export default function StepProgress({
               )}
             </div>
             <span
-              className={`whitespace-nowrap text-[10px] uppercase tracking-[0.15em] transition-colors duration-300 ${labelClasses}`}
+              className={`whitespace-nowrap text-[11px] transition-colors duration-300 ${labelClasses}`}
             >
               {step.label}
             </span>
@@ -91,8 +98,8 @@ export default function StepProgress({
             )}
             {i < steps.length - 1 && (
               <div
-                className={`mx-2 mt-3 h-px flex-1 transition-colors duration-300 ${
-                  step.complete ? "bg-[#1A1A1A]" : "bg-[#E0D9CE]"
+                className={`mx-2 mt-2.5 h-px flex-1 transition-colors duration-300 ${
+                  step.complete ? "bg-[#5C4F3D]/30" : "bg-[#E0D9CE]"
                 }`}
               />
             )}

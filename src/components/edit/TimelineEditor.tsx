@@ -2,6 +2,7 @@
 
 import type { TimelineItem } from "@/lib/types";
 import { inputClass } from "./FormField";
+import SuggestButton from "./SuggestButton";
 
 interface TimelineEditorProps {
   items: TimelineItem[];
@@ -29,6 +30,13 @@ export default function TimelineEditor({
 
   return (
     <div className="space-y-2.5">
+      {items.length === 0 && (
+        <SuggestButton<TimelineItem>
+          type="timeline"
+          onResult={(generated) => onChange(generated)}
+          label="Suggest a typical timeline"
+        />
+      )}
       {items.map((item, i) => (
         <div key={i} className="flex items-start gap-2">
           <input

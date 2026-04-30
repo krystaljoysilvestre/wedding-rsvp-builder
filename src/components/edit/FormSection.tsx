@@ -70,7 +70,7 @@ export default function FormSection({
   return (
     <section
       id={id}
-      className="border-t border-[#EDE8E0] py-6 first:border-t-0 first:pt-0 scroll-mt-4"
+      className="border-t border-[#EDE8E0] py-6 first:border-t-0 first:pt-0 scroll-mt-20"
     >
       {alwaysOpen ? (
         <div>{Header}</div>

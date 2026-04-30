@@ -65,7 +65,7 @@ export default function DatePicker({
   onChange,
   onFocus,
   ariaLabel,
-  placeholder = "Pick a date",
+  placeholder = "Your wedding date",
   className = "",
 }: DatePickerProps) {
   const [open, setOpen] = useState(false);

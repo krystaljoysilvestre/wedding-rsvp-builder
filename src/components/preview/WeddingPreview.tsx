@@ -15,6 +15,9 @@ import { getTheme, type SectionId } from "@/lib/themes";
 import { withDummyFallback } from "@/lib/dummyData";
 import ViewportSwitcher, { type Viewport } from "./ViewportSwitcher";
 import TemplateHeader from "./TemplateHeader";
+import LastSaved from "@/components/builder/LastSaved";
+import TemplatePickerButton from "@/components/builder/TemplatePickerButton";
+import OpenEditorButton from "@/components/builder/OpenEditorButton";
 import HeroSection from "./HeroSection";
 import StorySection from "./StorySection";
 import DetailsSection from "./DetailsSection";
@@ -99,7 +102,14 @@ function ClickToEdit({
 
 const ONBOARDING_HINT_KEY = "cwl_onboarding_hint_seen";
 
-export default function WeddingPreview() {
+interface WeddingPreviewProps {
+  /** When provided, renders an "Open editor" button in the preview header
+   *  (leftmost in the left cluster). DesktopLayout passes this only when
+   *  the editor panel is currently collapsed. */
+  onOpenEditor?: () => void;
+}
+
+export default function WeddingPreview({ onOpenEditor }: WeddingPreviewProps = {}) {
   const { data, generating, scrollTarget, setScrollTarget, demoMode, setEditTarget, activeSections } = useWedding();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -418,7 +428,7 @@ export default function WeddingPreview() {
           name1={displayData.name1}
           name2={displayData.name2}
           date={displayData.date}
-          tagline={displayData.tagline}
+          tagline={data.tagline}
           customImage={data.heroImage ?? displayData.heroImage}
           theme={theme}
           viewport={viewport}
@@ -665,11 +675,17 @@ export default function WeddingPreview() {
 
   return (
     <div className="flex h-full flex-col bg-[#F0EDEA]">
-      {/* Toolbar — hidden on mobile */}
+      {/* Top header — Template picker on the left, Saved + Share on the
+          right. Warm palette matches the editor side. Hidden on mobile
+          (the EditPanel chrome row covers them there) and in demoMode
+          (clean preview for the gallery / share page). */}
       {!demoMode && (
-        <div className="hidden items-center justify-between border-b border-gray-200 bg-white px-4 py-2.5 md:flex">
-          <p className="text-[12px] font-medium text-gray-500">Preview</p>
-          <ViewportSwitcher active={viewport} onChange={setViewport} />
+        <div className="hidden items-center justify-between gap-3 border-b border-[#EDE8E0] bg-[#FDFBF7] px-4 py-2.5 md:flex">
+          <div className="flex items-center gap-6">
+            {onOpenEditor && <OpenEditorButton onOpen={onOpenEditor} />}
+            <TemplatePickerButton />
+          </div>
+          <LastSaved />
         </div>
       )}
 
@@ -689,6 +705,18 @@ export default function WeddingPreview() {
 
       {/* Preview area */}
       <div className="relative flex-1 overflow-hidden">
+        {/* Floating viewport switcher — pill bottom-center over the preview.
+            Wrapper is pointer-events-none so it doesn't block click-to-edit
+            on the section underneath; the pill itself re-enables pointer
+            events. Hidden on mobile (already on a phone). */}
+        {!demoMode && (
+          <div className="pointer-events-none absolute inset-x-0 bottom-6 z-20 hidden justify-center md:flex">
+            <div className="pointer-events-auto">
+              <ViewportSwitcher active={viewport} onChange={setViewport} />
+            </div>
+          </div>
+        )}
+
         {/* Loading overlay */}
         {generating && (
           <div className="absolute inset-0 z-30 flex items-center justify-center bg-[#F0EDEA]/80 backdrop-blur-sm">

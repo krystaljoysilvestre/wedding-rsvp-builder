@@ -8,6 +8,7 @@ import type {
 import { DebouncedInput, DebouncedTextarea } from "./DebouncedField";
 import { inputClass, textareaClass } from "./FormField";
 import ImageUpload from "./ImageUpload";
+import SuggestButton from "./SuggestButton";
 
 const MAX_GALLERY_SLOTS = 6;
 
@@ -119,6 +120,13 @@ export function FaqEditor({
 
   return (
     <div className="space-y-2">
+      {items.length === 0 && (
+        <SuggestButton<FaqItem>
+          type="faq"
+          onResult={(generated) => onChange(generated)}
+          label="Suggest common questions"
+        />
+      )}
       {items.map((item, i) => (
         <div
           key={i}
@@ -169,6 +177,13 @@ export function PartyEditor({
 
   return (
     <div className="space-y-2">
+      {members.length === 0 && (
+        <SuggestButton<PartyMember>
+          type="wedding_party"
+          onResult={(generated) => onChange(generated)}
+          label="Suggest a sample party"
+        />
+      )}
       {members.map((member, i) => (
         <div key={i} className="flex items-start gap-2">
           <DebouncedInput

@@ -108,6 +108,7 @@ export default function DetailsSection({
                   fontFamily: theme.bodyFont,
                   fontSize: 13,
                   opacity: 0.75,
+                  whiteSpace: "pre-line",
                 }}
               >
                 {ceremonyAddress}
@@ -173,6 +174,7 @@ export default function DetailsSection({
                     fontFamily: theme.bodyFont,
                     fontSize: 13,
                     opacity: 0.75,
+                    whiteSpace: "pre-line",
                   }}
                 >
                   {receptionAddress}

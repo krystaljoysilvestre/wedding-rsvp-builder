@@ -21,7 +21,7 @@ export default function HeroSection({
   theme,
   viewport,
 }: HeroSectionProps) {
-  const displayTagline = tagline || "A celebration of love";
+  const hasTagline = Boolean(tagline && tagline.trim());
   const isMobile = viewport === "mobile";
   const isTablet = viewport === "tablet";
 
@@ -60,19 +60,21 @@ export default function HeroSection({
           <Ornament theme={theme} color="rgba(255,255,255,0.35)" size="md" />
         </div>
 
-        {/* Tagline */}
-        <p
-          className="hero-tagline font-medium uppercase opacity-0"
-          style={{
-            color: "rgba(255,255,255,0.6)",
-            fontFamily: theme.bodyFont,
-            fontSize: isMobile ? 9 : 11,
-            fontWeight: theme.bodyWeight,
-            letterSpacing: theme.labelSpacing,
-          }}
-        >
-          {displayTagline}
-        </p>
+        {/* Tagline — rendered only when set; cleared values stay empty. */}
+        {hasTagline && (
+          <p
+            className="hero-tagline font-medium uppercase opacity-0"
+            style={{
+              color: "rgba(255,255,255,0.6)",
+              fontFamily: theme.bodyFont,
+              fontSize: isMobile ? 9 : 11,
+              fontWeight: theme.bodyWeight,
+              letterSpacing: theme.labelSpacing,
+            }}
+          >
+            {tagline}
+          </p>
+        )}
 
         {/* Names */}
         <div className="mt-6" style={{ lineHeight: 1.2 }}>

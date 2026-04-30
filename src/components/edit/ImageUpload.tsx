@@ -5,12 +5,16 @@ import { processImage, validateFile } from "@/lib/image";
 
 interface ImageUploadProps {
   label: string;
+  /** Short context line shown under the label in the empty state — e.g.
+   *  "The big photo at the top of your site." */
+  description?: string;
   value?: string;
   onChange: (url: string | undefined) => void;
 }
 
 export default function ImageUpload({
   label,
+  description,
   value,
   onChange,
 }: ImageUploadProps) {
@@ -105,10 +109,15 @@ export default function ImageUpload({
     <div>
       {label && (
         <p
-          className="mb-1.5 text-[12px] font-medium"
+          className={`text-[12px] font-medium ${description ? "" : "mb-1.5"}`}
           style={{ color: "#5C4F3D" }}
         >
           {label}
+        </p>
+      )}
+      {description && (
+        <p className="mt-0.5 mb-2 text-[11px] text-[#8B7355]">
+          {description}
         </p>
       )}
       <div
