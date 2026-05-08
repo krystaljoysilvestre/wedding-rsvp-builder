@@ -3,18 +3,86 @@
 import { useState, useRef, useCallback } from "react";
 import { processImage, validateFile } from "@/lib/image";
 
+type Orientation = "landscape" | "portrait";
+
 interface ImageUploadProps {
   label: string;
   /** Short context line shown under the label in the empty state — e.g.
    *  "The big photo at the top of your site." */
   description?: string;
+  /** When set, shows a "best · works" illustration pair under the dropzone
+   *  matching the template's preferred orientation. Pass `"landscape"` for
+   *  full-width banner photos when the template is landscape (current
+   *  default for all 17 themes), or `"portrait"` for templates whose hero
+   *  is taller than wide. Omit for non-banner uploads (logos/monograms). */
+  orientationHint?: Orientation;
   value?: string;
   onChange: (url: string | undefined) => void;
+}
+
+function OrientationRect({
+  orientation,
+  solid,
+}: {
+  orientation: Orientation;
+  solid: boolean;
+}) {
+  const isLandscape = orientation === "landscape";
+  const w = isLandscape ? 22 : 14;
+  const h = isLandscape ? 14 : 18;
+  return (
+    <svg
+      width={w}
+      height={h}
+      viewBox={`0 0 ${w} ${h}`}
+      aria-hidden
+      className="shrink-0"
+    >
+      <rect
+        x="0.75"
+        y="0.75"
+        width={w - 1.5}
+        height={h - 1.5}
+        rx="1.5"
+        fill={solid ? "#F5F3EF" : "#FAF7F2"}
+        stroke={solid ? "#8B7355" : "#C4B8A4"}
+        strokeWidth="1"
+        strokeDasharray={solid ? undefined : "2.5 2"}
+      />
+    </svg>
+  );
+}
+
+function OrientationHintRow({ preferred }: { preferred: Orientation }) {
+  const alt: Orientation = preferred === "landscape" ? "portrait" : "landscape";
+  const bestLabel =
+    preferred === "landscape" ? "Landscape · best" : "Portrait · best";
+  // Crop direction depends on which orientation the user uploaded *into* the
+  // template's preferred shape. Landscape-preferred + portrait input crops
+  // edges (sides). Portrait-preferred + landscape input crops top & bottom.
+  const altLabel =
+    preferred === "landscape"
+      ? "Portrait works · may crop edges"
+      : "Landscape works · may crop top & bottom";
+
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10.5px] text-[#8B7355]">
+      <div className="flex items-center gap-1.5">
+        <OrientationRect orientation={preferred} solid />
+        <span className="text-[#5C4F3D]">{bestLabel}</span>
+      </div>
+      <div className="flex items-center gap-1.5 opacity-75">
+        <OrientationRect orientation={alt} solid={false} />
+        <span>{altLabel}</span>
+      </div>
+    </div>
+  );
 }
 
 export default function ImageUpload({
   label,
   description,
+  orientationHint,
   value,
   onChange,
 }: ImageUploadProps) {
@@ -161,18 +229,15 @@ export default function ImageUpload({
               {dragging ? "Drop your image here" : "Click or drag to upload"}
             </p>
             <p className="mt-0.5 text-[10px] text-[#C4B8A4]">
-              JPG, PNG — max 5MB
+              JPG, PNG, HEIC — up to 5MB
             </p>
           </>
         )}
       </div>
-      {error ? (
-        <p className="mt-1.5 text-[11px] text-red-500">{error}</p>
-      ) : (
-        <p className="mt-1.5 text-[11px] italic text-gray-500">
-          You can change this anytime.
-        </p>
+      {orientationHint && !error && (
+        <OrientationHintRow preferred={orientationHint} />
       )}
+      {error && <p className="mt-1.5 text-[11px] text-red-500">{error}</p>}
       <input
         ref={inputRef}
         type="file"

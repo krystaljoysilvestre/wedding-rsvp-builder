@@ -1,24 +1,46 @@
 import type { ThemeConfig } from "@/lib/themes";
+import type { StoryMilestone } from "@/lib/types";
 import type { Viewport } from "./ViewportSwitcher";
-import Ornament, { Divider } from "./Ornament";
+import Ornament from "./Ornament";
 
 interface StorySectionProps {
   story?: string;
-  welcomeMessage?: string;
+  storyTimeline?: StoryMilestone[];
   theme: ThemeConfig;
   viewport: Viewport;
 }
 
 export default function StorySection({
   story,
-  welcomeMessage,
+  storyTimeline,
   theme,
   viewport,
 }: StorySectionProps) {
-  const isMobile = viewport === "mobile";
-  const content = story || welcomeMessage;
+  const format = theme.storyFormat ?? "prose";
+  return format === "timeline" ? (
+    <TimelineLayout
+      milestones={storyTimeline}
+      theme={theme}
+      viewport={viewport}
+    />
+  ) : (
+    <ProseLayout story={story} theme={theme} viewport={viewport} />
+  );
+}
 
-  if (!content) return null;
+// ─── Prose layout (default) ────────────────────────────────────────
+
+function ProseLayout({
+  story,
+  theme,
+  viewport,
+}: {
+  story?: string;
+  theme: ThemeConfig;
+  viewport: Viewport;
+}) {
+  if (!story) return null;
+  const isMobile = viewport === "mobile";
 
   return (
     <section
@@ -29,7 +51,6 @@ export default function StorySection({
       }}
     >
       <div style={{ maxWidth: isMobile ? "100%" : 580, textAlign: "center" }}>
-        {/* Label */}
         <p
           className="uppercase"
           style={{
@@ -40,15 +61,13 @@ export default function StorySection({
             letterSpacing: theme.labelSpacing,
           }}
         >
-          {story ? "Our Story" : "Welcome"}
+          Our Story
         </p>
 
-        {/* Ornament */}
         <div className="mt-5">
           <Ornament theme={theme} size="sm" />
         </div>
 
-        {/* Opening quote — skip for minimal */}
         {theme.ornament !== "none" && (
           <p
             className="mt-8"
@@ -66,7 +85,6 @@ export default function StorySection({
           </p>
         )}
 
-        {/* Story content */}
         <p
           style={{
             color: theme.text,
@@ -78,10 +96,9 @@ export default function StorySection({
             marginTop: theme.ornament !== "none" ? 16 : 32,
           }}
         >
-          {content}
+          {story}
         </p>
 
-        {/* Closing quote */}
         {theme.ornament !== "none" && (
           <p
             className="mt-4"
@@ -98,27 +115,114 @@ export default function StorySection({
             &rdquo;
           </p>
         )}
+      </div>
+    </section>
+  );
+}
 
-        {/* Welcome message if both exist */}
-        {story && welcomeMessage && (
-          <>
-            <div className="mt-12">
-              <Divider theme={theme} />
-            </div>
-            <p
-              className="mt-8"
-              style={{
-                color: theme.textMuted,
-                fontFamily: theme.bodyFont,
-                fontSize: isMobile ? 13 : 15,
-                fontWeight: theme.bodyWeight,
-                lineHeight: 1.9,
-              }}
+// ─── Timeline layout (theme.storyFormat === "timeline") ────────────
+
+function TimelineLayout({
+  milestones,
+  theme,
+  viewport,
+}: {
+  milestones?: StoryMilestone[];
+  theme: ThemeConfig;
+  viewport: Viewport;
+}) {
+  if (!milestones || milestones.length === 0) return null;
+  const isMobile = viewport === "mobile";
+
+  return (
+    <section
+      className="reveal-section flex items-center justify-center"
+      style={{
+        background: theme.bg,
+        padding: isMobile ? theme.sectionPaddingMobile : theme.sectionPadding,
+      }}
+    >
+      <div style={{ maxWidth: isMobile ? "100%" : 600, textAlign: "center" }}>
+        <p
+          className="uppercase"
+          style={{
+            color: theme.accentMuted,
+            fontFamily: theme.bodyFont,
+            fontSize: 10,
+            fontWeight: theme.bodyWeight,
+            letterSpacing: theme.labelSpacing,
+          }}
+        >
+          Our Story
+        </p>
+
+        <div className="mt-5">
+          <Ornament theme={theme} size="sm" />
+        </div>
+
+        <ol
+          className="mt-10 flex flex-col items-center"
+          style={{ gap: isMobile ? 32 : 40 }}
+        >
+          {milestones.map((m, i) => (
+            <li
+              key={i}
+              className="flex flex-col items-center"
+              style={{ gap: isMobile ? 6 : 8 }}
             >
-              {welcomeMessage}
-            </p>
-          </>
-        )}
+              {m.image && (
+                <div
+                  className="bg-cover bg-center"
+                  style={{
+                    backgroundImage: `url('${m.image}')`,
+                    width: isMobile ? 140 : 180,
+                    height: isMobile ? 140 : 180,
+                    borderRadius: theme.borderRadius,
+                    marginBottom: isMobile ? 8 : 12,
+                  }}
+                  aria-hidden
+                />
+              )}
+              <span
+                className="uppercase"
+                style={{
+                  color: theme.accent,
+                  fontFamily: theme.bodyFont,
+                  fontSize: isMobile ? 11 : 12,
+                  fontWeight: theme.bodyWeight,
+                  letterSpacing: theme.labelSpacing,
+                }}
+              >
+                {m.year}
+              </span>
+              <span
+                style={{
+                  color: theme.text,
+                  fontFamily: theme.headingFont,
+                  fontWeight: theme.headingWeight,
+                  fontStyle: theme.headingStyle,
+                  fontSize: isMobile ? 18 : 24,
+                  lineHeight: 1.3,
+                }}
+              >
+                {m.label}
+              </span>
+              {/* Connector — between items, not after the last */}
+              {i < milestones.length - 1 && (
+                <span
+                  aria-hidden
+                  style={{
+                    width: 1,
+                    height: isMobile ? 24 : 32,
+                    background: theme.accentMuted,
+                    opacity: 0.4,
+                    marginTop: isMobile ? 12 : 16,
+                  }}
+                />
+              )}
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );

@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { getTheme, THEME_NAMES } from "@/lib/themes";
+import { formatPHP } from "@/lib/pricing";
 import type { ThemeName } from "@/lib/types";
 
 interface TemplatePickerProps {
@@ -113,7 +114,7 @@ export default function TemplatePicker({
                     style={{ backgroundImage: `url('${theme.heroImage}')` }}
                   />
 
-                  {theme.isPremium && (
+                  {(theme.priceCents ?? 0) > 0 && (
                     <div className="absolute top-2 right-2 flex items-center gap-1 rounded-full bg-black/60 px-2 py-0.5 text-[9px] font-medium uppercase tracking-[0.2em] text-white backdrop-blur-sm">
                       <svg
                         className="h-2.5 w-2.5"
@@ -123,7 +124,7 @@ export default function TemplatePicker({
                       >
                         <path d="M12 1L3 5v6c0 5.5 3.8 10.7 9 12 5.2-1.3 9-6.5 9-12V5l-9-4z" />
                       </svg>
-                      Premium
+                      {formatPHP(theme.priceCents)}
                     </div>
                   )}
 

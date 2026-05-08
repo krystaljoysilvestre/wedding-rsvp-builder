@@ -98,6 +98,26 @@ export const DUMMY_DATA: Record<ThemeName, WeddingData> = {
     receptionAddress: "CCP Complex, Pasay City",
     story:
       "She was writing her first screenplay. He was scoring someone else's. A late-night dim sum table in Binondo turned into a lifetime collaboration.",
+    storyTimeline: [
+      {
+        year: "2019",
+        label: "Met over dim sum in Binondo",
+        image:
+          "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=600&q=80",
+      },
+      {
+        year: "2021",
+        label: "Co-wrote our first short film",
+        image:
+          "https://images.unsplash.com/photo-1485846234645-a62644f84728?w=600&q=80",
+      },
+      {
+        year: "2024",
+        label: "He proposed at the CCP rooftop",
+        image:
+          "https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=600&q=80",
+      },
+    ],
     welcomeMessage:
       "Tonight, the story we've been writing together meets its most beautiful scene.",
     timeline: [
@@ -173,6 +193,26 @@ export const DUMMY_DATA: Record<ThemeName, WeddingData> = {
     receptionAddress: "One Rizal Park, Manila",
     story:
       "She collected old Filipino jazz vinyls. He inherited his lolo's piano from Vigan. Their first date at Café Adriatico lasted until the band packed up and the lights came on.",
+    storyTimeline: [
+      {
+        year: "2018",
+        label: "Spotted across the bar at Café Adriatico",
+        image:
+          "https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=600&q=80",
+      },
+      {
+        year: "2020",
+        label: "Recorded our first duet at his lolo's piano",
+        image:
+          "https://images.unsplash.com/photo-1520523839897-bd0b52f945a0?w=600&q=80",
+      },
+      {
+        year: "2024",
+        label: "Said yes under the Manila Hotel chandeliers",
+        image:
+          "https://images.unsplash.com/photo-1519741497674-413e1aae5f59?w=600&q=80",
+      },
+    ],
     welcomeMessage:
       "To our favorite people: welcome to the party we've been dreaming of.",
     timeline: [
@@ -300,6 +340,26 @@ export const DUMMY_DATA: Record<ThemeName, WeddingData> = {
     receptionAddress: "Malaybalay, Bukidnon",
     story:
       "She was restoring an old farmhouse in Cavite. He delivered the reclaimed nara beams. Six months of dusty afternoons turned into a quieter, steadier kind of forever.",
+    storyTimeline: [
+      {
+        year: "2020",
+        label: "Met over reclaimed nara beams in Cavite",
+        image:
+          "https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=600&q=80",
+      },
+      {
+        year: "2022",
+        label: "Built our first table together",
+        image:
+          "https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=600&q=80",
+      },
+      {
+        year: "2024",
+        label: "He proposed at sunset on the farm",
+        image:
+          "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?w=600&q=80",
+      },
+    ],
     welcomeMessage:
       "Thank you for making the drive. Pull up a seat — the sunset is the best part.",
     timeline: [
@@ -425,6 +485,26 @@ export const DUMMY_DATA: Record<ThemeName, WeddingData> = {
     receptionAddress: "Pasong Tamo Extension, Makati",
     story:
       "Two architects who met at a site walk in Poblacion. They've been drawing plans together — and a life to match — ever since.",
+    storyTimeline: [
+      {
+        year: "2019",
+        label: "Met at a Poblacion site walk",
+        image:
+          "https://images.unsplash.com/photo-1486325212027-8081e485255e?w=600&q=80",
+      },
+      {
+        year: "2021",
+        label: "First project together — a Makati loft",
+        image:
+          "https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80",
+      },
+      {
+        year: "2024",
+        label: "Drew up the rest of our lives",
+        image:
+          "https://images.unsplash.com/photo-1519741497674-413e1aae5f59?w=600&q=80",
+      },
+    ],
     welcomeMessage:
       "Welcome to our favorite building. Thank you for helping us make it sing tonight.",
     timeline: [
@@ -516,5 +596,10 @@ export function withDummyFallback(
     // @ts-expect-error — index access on union
     merged[key] = v;
   });
+  // Date is intentionally NOT dummy-filled. Showing a fake "April 18, 2026"
+  // before the bride picks a real date felt like the site was lying. Hero +
+  // SaveTheDate hide the date block when missing; Countdown hides itself;
+  // Details falls back to "Date to be announced" — all three are graceful.
+  merged.date = real.date;
   return merged;
 }

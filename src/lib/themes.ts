@@ -1,4 +1,5 @@
 import type { ThemeName } from "./types";
+import { PHP_PRICES } from "./pricing";
 
 export type OrnamentStyle = "floral" | "geometric" | "none" | "lines";
 
@@ -10,6 +11,7 @@ export type OrnamentStyle = "floral" | "geometric" | "none" | "lines";
 export type SectionId =
   // Core sections (always available)
   | "hero"
+  | "welcome"
   | "story"
   | "countdown"
   | "details"
@@ -31,7 +33,9 @@ export interface SectionMeta {
   id: SectionId;
   label: string;
   description: string;
-  isPremium?: boolean;
+  /** PHP centavos. 0 or undefined = free. Positive = premium and gated
+   *  at publish via the cart. Source of truth: src/lib/pricing.ts. */
+  priceCents?: number;
 }
 
 // Tiers group sections in the SectionManager's "Add more" list. Hero is
@@ -40,6 +44,7 @@ export type SectionTier = "personal" | "guests" | "extras";
 
 export const SECTION_TIER: Record<Exclude<SectionId, "hero">, SectionTier> = {
   // Personal touch — content that tells the couple's story
+  welcome: "personal",
   story: "personal",
   closing: "personal",
   gallery: "personal",
@@ -73,6 +78,11 @@ export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
     id: "hero",
     label: "Cover",
     description: "Names, date, and cover photo.",
+  },
+  welcome: {
+    id: "welcome",
+    label: "Welcome note",
+    description: "A warm hello to your guests.",
   },
   story: {
     id: "story",
@@ -118,7 +128,7 @@ export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
     id: "travel",
     label: "Travel",
     description: "How to get there and where to stay.",
-    isPremium: true,
+    priceCents: PHP_PRICES.section.travel,
   },
   registry: {
     id: "registry",
@@ -134,13 +144,13 @@ export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
     id: "weddingParty",
     label: "Wedding Party",
     description: "Your bridesmaids, groomsmen, and family.",
-    isPremium: true,
+    priceCents: PHP_PRICES.section.weddingParty,
   },
   map: {
     id: "map",
     label: "Map",
     description: "An embedded map of the venue.",
-    isPremium: true,
+    priceCents: PHP_PRICES.section.map,
   },
   hashtag: {
     id: "hashtag",
@@ -151,13 +161,14 @@ export const SECTION_METADATA: Record<SectionId, SectionMeta> = {
     id: "saveTheDate",
     label: "Save the Date",
     description: "A heads-up before the invitation arrives.",
-    isPremium: true,
+    priceCents: PHP_PRICES.section.saveTheDate,
   },
 };
 
 // Default section order — themes that don't override get this.
 export const DEFAULT_SECTIONS: SectionId[] = [
   "hero",
+  "welcome",
   "story",
   "countdown",
   "details",
@@ -189,6 +200,11 @@ export interface ThemeConfig {
   heroOverlay: string;
   heroImage: string;
   closingImage: string;
+  // Preferred orientation for the Main + Ending photo uploads. Drives the
+  // editor's upload-hint illustrations. Defaults to "landscape" when
+  // omitted (HeroSection currently renders full-bleed regardless, so this
+  // is a hint to users about which photos look best — not a layout switch).
+  heroOrientation?: "landscape" | "portrait";
   // Aesthetic
   ornament: OrnamentStyle;
   borderRadius: number;
@@ -197,15 +213,20 @@ export interface ThemeConfig {
   sectionPaddingMobile: string;
   // Layout — which sections, in what order
   sections: SectionId[];
-  // Pricing (visual gating only for now — no auth/payments wired yet)
-  isPremium?: boolean;
+  // Story format — drives how the "Our Story" section renders + which
+  // editor shape the user sees in Step 3. Defaults to "prose" when omitted.
+  storyFormat?: "prose" | "timeline";
+  // Pricing — PHP centavos. 0 or undefined = free. v1 launches with all
+  // 17 themes free. Future paid themes pick a tier from PHP_PRICES.theme
+  // (Standard/Signature/Designer). Source of truth: src/lib/pricing.ts.
+  priceCents?: number;
 }
 
 const themes: Record<ThemeName, ThemeConfig> = {
   romantic: {
     name: "romantic",
     label: "Romantic",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#FDF8F4",
     bgAlt: "#FAF0E8",
     text: "#3D2B1F",
@@ -233,7 +254,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   elegant: {
     name: "elegant",
     label: "Elegant",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#FFFFFF",
     bgAlt: "#F5F5F5",
     text: "#0A0A0A",
@@ -261,7 +282,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   minimal: {
     name: "minimal",
     label: "Minimal",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#FAFAFA",
     bgAlt: "#F0F0F0",
     text: "#1A1A1A",
@@ -289,7 +310,8 @@ const themes: Record<ThemeName, ThemeConfig> = {
   cinematic: {
     name: "cinematic",
     label: "Cinematic",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
+    storyFormat: "timeline",
     bg: "#0C0C0C",
     bgAlt: "#151515",
     text: "#F2E8D5",
@@ -313,12 +335,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 56,
     sectionPadding: "180px 56px",
     sectionPaddingMobile: "100px 28px",
-    isPremium: true,
   },
   garden: {
     name: "garden",
     label: "Garden",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#F5F8ED",
     bgAlt: "#E6EFD4",
     text: "#2D4A2B",
@@ -346,7 +367,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   modern: {
     name: "modern",
     label: "Modern",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#F8F6F2",
     bgAlt: "#EDE9E0",
     text: "#1A1A1A",
@@ -374,7 +395,8 @@ const themes: Record<ThemeName, ThemeConfig> = {
   artdeco: {
     name: "artdeco",
     label: "Art Deco",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
+    storyFormat: "timeline",
     bg: "#0D0D0D",
     bgAlt: "#1A1A1A",
     text: "#F5E6C8",
@@ -398,12 +420,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 72,
     sectionPadding: "180px 56px",
     sectionPaddingMobile: "100px 28px",
-    isPremium: true,
   },
   boho: {
     name: "boho",
     label: "Boho Desert",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#F2E6D0",
     bgAlt: "#E5D5B8",
     text: "#5C3A1F",
@@ -427,12 +448,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 52,
     sectionPadding: "150px 48px",
     sectionPaddingMobile: "94px 26px",
-    isPremium: true,
   },
   coastal: {
     name: "coastal",
     label: "Coastal",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#F0F6F9",
     bgAlt: "#D9E6EC",
     text: "#1F3D52",
@@ -456,12 +476,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 40,
     sectionPadding: "126px 44px",
     sectionPaddingMobile: "80px 22px",
-    isPremium: true,
   },
   vintage: {
     name: "vintage",
     label: "Vintage",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#F5EDE0",
     bgAlt: "#E8DCC8",
     text: "#3D2818",
@@ -485,12 +504,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 48,
     sectionPadding: "160px 48px",
     sectionPaddingMobile: "96px 28px",
-    isPremium: true,
   },
   daisy: {
     name: "daisy",
     label: "Daisy",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#FFFFFF",
     bgAlt: "#F3F6FB",
     text: "#1B3A6B",
@@ -518,7 +536,8 @@ const themes: Record<ThemeName, ThemeConfig> = {
   rustic: {
     name: "rustic",
     label: "Rustic",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
+    storyFormat: "timeline",
     bg: "#F5EBE0",
     bgAlt: "#E8D5B7",
     text: "#4A3626",
@@ -546,7 +565,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   watercolor: {
     name: "watercolor",
     label: "Watercolor",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#FBF8F3",
     bgAlt: "#F3EFE8",
     text: "#52495C",
@@ -574,7 +593,7 @@ const themes: Record<ThemeName, ThemeConfig> = {
   tropical: {
     name: "tropical",
     label: "Tropical",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#EDF5EE",
     bgAlt: "#D9E8DC",
     text: "#1F3A2C",
@@ -598,12 +617,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 48,
     sectionPadding: "160px 48px",
     sectionPaddingMobile: "96px 26px",
-    isPremium: true,
   },
   whimsical: {
     name: "whimsical",
     label: "Whimsical",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#FEF6F4",
     bgAlt: "#F9E7E4",
     text: "#6B3E5C",
@@ -627,12 +645,11 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 40,
     sectionPadding: "140px 48px",
     sectionPaddingMobile: "88px 24px",
-    isPremium: true,
   },
   regal: {
     name: "regal",
     label: "Regal",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
     bg: "#F8F2E6",
     bgAlt: "#EDE2CA",
     text: "#2D1B3A",
@@ -656,12 +673,12 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 60,
     sectionPadding: "170px 56px",
     sectionPaddingMobile: "100px 28px",
-    isPremium: true,
   },
   industrial: {
     name: "industrial",
     label: "Industrial",
-    sections: ["hero", "details", "rsvp"],
+    sections: ["hero", "welcome", "details", "rsvp"],
+    storyFormat: "timeline",
     bg: "#EDECEA",
     bgAlt: "#D8D6D2",
     text: "#2B2B2B",
@@ -685,7 +702,6 @@ const themes: Record<ThemeName, ThemeConfig> = {
     dividerWidth: 72,
     sectionPadding: "140px 56px",
     sectionPaddingMobile: "88px 24px",
-    isPremium: true,
   },
 };
 
@@ -736,15 +752,14 @@ export const THEME_NAMES: ThemeName[] = [
   "industrial",
 ];
 
-// Group templates by pricing tier for landing page + gating UI
+// Group templates by pricing tier for landing page + gating UI.
+// Source of truth: ThemeConfig.priceCents (PHP centavos; 0/undefined = free).
 export function isPremiumTheme(name: ThemeName): boolean {
-  return themes[name].isPremium === true;
+  return (themes[name].priceCents ?? 0) > 0;
 }
 
 export const FREE_THEMES: ThemeName[] = THEME_NAMES.filter(
-  (n) => !themes[n].isPremium
+  (n) => !isPremiumTheme(n),
 );
 
-export const PREMIUM_THEMES: ThemeName[] = THEME_NAMES.filter(
-  (n) => themes[n].isPremium
-);
+export const PREMIUM_THEMES: ThemeName[] = THEME_NAMES.filter(isPremiumTheme);

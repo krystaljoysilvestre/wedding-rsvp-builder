@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useWedding } from "@/context/WeddingContext";
 import { displayNames } from "@/lib/types";
 import { getTheme } from "@/lib/themes";
@@ -8,6 +8,7 @@ import FormSection from "./FormSection";
 import FormField, { inputClass, selectClass, textareaClass } from "./FormField";
 import { DebouncedInput, DebouncedTextarea } from "./DebouncedField";
 import TimelineEditor from "./TimelineEditor";
+import StoryTimelineEditor from "./StoryTimelineEditor";
 import ImageUpload from "./ImageUpload";
 import AIGenerateButton from "./AIGenerateButton";
 import StepProgress from "./StepProgress";
@@ -39,7 +40,7 @@ const FIELD_SECTION: Record<string, string> = {
   receptionAddress: "section-details",
   receptionTime: "section-details",
   story: "section-story",
-  welcomeMessage: "section-story",
+  welcomeMessage: "section-welcome",
   rsvpEnabled: "section-rsvp",
   timeline: "section-timeline",
   dressCode: "section-dresscode",
@@ -95,8 +96,7 @@ const FIELD_TO_STEP: Record<string, StepKey> = {
   receptionVenue: 2,
   receptionAddress: 2,
   receptionTime: 2,
-  // Step 3 — Optional enhancements: story, welcome, logistics extras,
-  // plus the 8 optional section editors.
+  // Step 3 — Customize: theme palette + logo (Advanced) + optional sections.
   welcomeMessage: 3,
   story: 3,
   timeline: 3,
@@ -123,7 +123,7 @@ const FIELD_TO_STEP: Record<string, StepKey> = {
 // click-to-edit lands on one of these fields, SectionManager auto-expands
 // that section's accordion row.
 const SECTION_FOR_FIELD: Partial<Record<string, SectionId>> = {
-  welcomeMessage: "story",
+  welcomeMessage: "welcome",
   story: "story",
   timeline: "timeline",
   dressCode: "dresscode",
@@ -188,15 +188,17 @@ function ContinueButton({
   label,
   onClick,
   variant = "primary",
+  disabled = false,
 }: {
   label: string;
   onClick: () => void;
   variant?: "primary" | "muted";
+  disabled?: boolean;
 }) {
   const [loading, setLoading] = useState(false);
 
   function handleClick() {
-    if (loading) return;
+    if (loading || disabled) return;
     setLoading(true);
     // Brief delay so the spinner is visible before the transition begins.
     // The button typically unmounts when its parent step closes, so loading
@@ -208,17 +210,21 @@ function ContinueButton({
     }, 150);
   }
 
-  const variantClasses =
-    variant === "muted"
-      ? "bg-[#1A1A1A]/30 hover:bg-[#1A1A1A]/35"
-      : "bg-[#1A1A1A] hover:bg-[#2C2C2C]";
+  const effectivelyMuted = disabled || variant === "muted";
+  const variantClasses = effectivelyMuted
+    ? "bg-[#1A1A1A]/30 hover:bg-[#1A1A1A]/35"
+    : "bg-[#1A1A1A] hover:bg-[#2C2C2C]";
+  const disabledClasses = disabled
+    ? "cursor-not-allowed opacity-70"
+    : "disabled:cursor-wait disabled:opacity-90";
 
   return (
     <button
       type="button"
       onClick={handleClick}
       disabled={loading}
-      className={`group mt-2 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-medium text-white transition-colors disabled:cursor-wait disabled:opacity-90 ${variantClasses}`}
+      aria-disabled={disabled || undefined}
+      className={`group mt-2 inline-flex items-center gap-2 rounded-lg px-4 py-2.5 text-[13px] font-medium text-white transition-colors ${disabledClasses} ${variantClasses}`}
     >
       {loading && (
         <svg
@@ -262,42 +268,100 @@ function ContinueButton({
   );
 }
 
-function CompletionLine({
-  icon,
-  children,
-}: {
-  icon?: React.ReactNode;
-  children: React.ReactNode;
-}) {
-  return (
-    <div
-      className="flex items-center gap-1.5 text-[#5C4F3D]"
-      aria-live="polite"
-    >
-      {icon && <span className="completion-icon">{icon}</span>}
-      <p className="completion-text text-[12px] italic">{children}</p>
-    </div>
-  );
-}
-
 // ─── Inline icons (heroicons-style outline) ──────────────────────────
 
-function SparkleIcon() {
+// Ceremony-type icons. Stroke 1.5, currentColor, h-3.5 w-3.5 to sit
+// neatly inside chip buttons. Hand-drawn rather than emoji so the chips
+// match the warm minimal aesthetic instead of OS-rendered glyphs.
+
+function CeremonyChipIcon({
+  accent,
+  children,
+}: {
+  accent?: string;
+  children: React.ReactNode;
+}) {
   return (
     <svg
       className="h-3.5 w-3.5"
       fill="none"
       viewBox="0 0 24 24"
-      stroke="currentColor"
+      stroke={accent ?? "currentColor"}
       strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
       aria-hidden
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.455 2.456L21.75 6l-1.036.259a3.375 3.375 0 00-2.455 2.456z"
-      />
+      {children}
     </svg>
+  );
+}
+
+function ChurchIcon({ active }: { active?: boolean }) {
+  return (
+    <CeremonyChipIcon accent={active ? undefined : "#C4917B"}>
+      {/* cross on top */}
+      <path d="M12 3v4" />
+      <path d="M10 5h4" />
+      {/* peaked roof + body */}
+      <path d="M5 21V12l7-4 7 4v9" />
+      {/* door */}
+      <path d="M11 21v-4a1 1 0 012 0v4" />
+      <path d="M3 21h18" />
+    </CeremonyChipIcon>
+  );
+}
+
+function LeafIcon({ active }: { active?: boolean }) {
+  return (
+    <CeremonyChipIcon accent={active ? undefined : "#88A688"}>
+      <path d="M20 4c-9 0-15 5-15 13a4 4 0 004 4c8 0 13-6 13-15 0-1-1-2-2-2z" />
+      <path d="M5 21c0-7 5-12 12-13" />
+    </CeremonyChipIcon>
+  );
+}
+
+function WaveIcon({ active }: { active?: boolean }) {
+  return (
+    <CeremonyChipIcon accent={active ? undefined : "#8FA8B8"}>
+      <path d="M3 9c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+      <path d="M3 14c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+      <path d="M3 19c2-2 4-2 6 0s4 2 6 0 4-2 6 0" />
+    </CeremonyChipIcon>
+  );
+}
+
+function ColumnIcon({ active }: { active?: boolean }) {
+  return (
+    <CeremonyChipIcon accent={active ? undefined : "#B89070"}>
+      {/* pediment */}
+      <path d="M4 9l8-5 8 5" />
+      {/* lintel */}
+      <path d="M4 9h16" />
+      {/* columns */}
+      <path d="M7 9v10" />
+      <path d="M12 9v10" />
+      <path d="M17 9v10" />
+      {/* base */}
+      <path d="M3 21h18" />
+    </CeremonyChipIcon>
+  );
+}
+
+function BuildingIcon({ active }: { active?: boolean }) {
+  return (
+    <CeremonyChipIcon accent={active ? undefined : "#9C8AA8"}>
+      {/* outer building */}
+      <path d="M5 21V5a1 1 0 011-1h12a1 1 0 011 1v16" />
+      <path d="M3 21h18" />
+      {/* windows: 3 rows × 2 cols */}
+      <path d="M9 8h1.5" />
+      <path d="M13.5 8h1.5" />
+      <path d="M9 12h1.5" />
+      <path d="M13.5 12h1.5" />
+      {/* door */}
+      <path d="M10 21v-4a2 2 0 014 0v4" />
+    </CeremonyChipIcon>
   );
 }
 
@@ -307,12 +371,15 @@ function SparkleIcon() {
 // Tagaytay / Boracay / Palawan; Civil covers city-hall ceremonies for
 // interfaith or non-religious couples; Hotel covers Manila Hotel /
 // Peninsula / Shangri-La ballroom weddings.
-const CEREMONY_PRESETS: { label: string; emoji: string }[] = [
-  { label: "Church", emoji: "⛪" },
-  { label: "Garden", emoji: "🌿" },
-  { label: "Beach", emoji: "🌊" },
-  { label: "Civil", emoji: "🏛️" },
-  { label: "Hotel", emoji: "🏨" },
+const CEREMONY_PRESETS: {
+  label: string;
+  Icon: (props: { active?: boolean }) => React.ReactElement;
+}[] = [
+  { label: "Church", Icon: ChurchIcon },
+  { label: "Garden", Icon: LeafIcon },
+  { label: "Beach", Icon: WaveIcon },
+  { label: "Civil", Icon: ColumnIcon },
+  { label: "Hotel", Icon: BuildingIcon },
 ];
 
 function ChipButton({
@@ -371,13 +438,14 @@ function CeremonyTypeChips({
       <div className="flex flex-wrap gap-2">
         {CEREMONY_PRESETS.map((p) => {
           const active = value === p.label;
+          const Icon = p.Icon;
           return (
             <ChipButton
               key={p.label}
               active={active}
               onClick={() => selectPreset(p.label)}
             >
-              <span aria-hidden>{p.emoji}</span>
+              <Icon active={active} />
               {p.label}
             </ChipButton>
           );
@@ -397,30 +465,6 @@ function CeremonyTypeChips({
         />
       )}
     </div>
-  );
-}
-
-function MapPinIcon() {
-  return (
-    <svg
-      className="h-3.5 w-3.5"
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      aria-hidden
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"
-      />
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"
-      />
-    </svg>
   );
 }
 
@@ -518,6 +562,7 @@ export default function EditPanel({
     }
 
     if (stepKey === "advanced") {
+      setCurrentStep(3);
       setAdvancedOpen(true);
     } else {
       setCurrentStep(stepKey);
@@ -578,52 +623,73 @@ export default function EditPanel({
     data.ceremonyType && data.ceremonyVenue && data.ceremonyAddress,
   );
 
-  // Step 3 — Make it personal: gates on publish state. Stays unchecked
+  // Step 3 — Customize: gates on publish state. Stays unchecked
   // until the user actually publishes (Phase 4 of ARCHITECTURE.md).
   // TODO: replace with `Boolean(data.publishedAt)` once publishing ships.
   const step3Complete = false;
 
-  // Advanced unlocks once Step 2 has been touched (venue/address) OR a
-  // click-to-edit targeted an Advanced field (advancedOpen forced true).
-  const step2Started = Boolean(data.ceremonyVenue || data.ceremonyAddress);
-  const showAdvanced = step2Started || advancedOpen;
+  // Step 2 is locked until names + date are filled. Same pattern as
+  // step3Locked — chip + Continue button respect the lock; click-to-edit on
+  // a Step-2 preview section deliberately bypasses (the in-panel banner
+  // "Add your names and date in About you" does the teaching).
+  const step2Locked = !step1Complete;
 
-  // ── Step 3 (Make it personal) — section manager wiring ────────────
+  // Step 3 is locked until 1 + 2 are filled. Same gate as Phase 4 publishing
+  // (ARCHITECTURE.md): a wedding site without names/date/venue isn't usable,
+  // and the Customize step has nothing meaningful to anchor to. The chip +
+  // Continue → 3 button respect this; click-to-edit on a Step-3 preview
+  // section deliberately bypasses (the in-panel banner does the teaching
+  // when they land).
+  const step3Locked = !step1Complete || !step2Complete;
+
+  // ── Step 3 (Customize) — section manager wiring ────────────────────
   const activeSectionsForManager =
     data.userSections && data.userSections.length > 0
       ? data.userSections
       : getTheme(data.theme).sections;
 
+  // Sections that can't be removed from the manager (still draggable).
+  // Details + Story (which renders the Welcome note) are essentials; RSVP
+  // is locked only when the user has the RSVP toggle enabled in Step 1 —
+  // turning the toggle off frees them to remove it again.
+  const lockedManagerSections = useMemo<ReadonlySet<SectionId>>(() => {
+    const s = new Set<SectionId>(["details", "welcome"]);
+    if (data.rsvpEnabled) s.add("rsvp");
+    return s;
+  }, [data.rsvpEnabled]);
+
   function handleSectionsChange(next: SectionId[]) {
-    // Auto-expand any newly-added section so its editor reveals inline.
+    // Auto-expand any newly-added section so its editor reveals inline,
+    // and scroll the preview to the new section so the bride can see what
+    // just landed without hunting for it.
     const added = next.find((id) => !activeSectionsForManager.includes(id));
     if (added) {
       setExpandedSections((prev) => new Set(prev).add(added));
+      setScrollTarget(`section-${added}`);
     }
     update({ userSections: next });
   }
 
   function renderEditorFor(id: SectionId): React.ReactNode {
+    return renderInnerEditorFor(id);
+  }
+
+  function renderInnerEditorFor(id: SectionId): React.ReactNode {
     switch (id) {
-      case "story":
+      case "welcome":
         return (
-          <>
-            <FormField
-              id="field-welcomeMessage"
-              label="Welcome note"
-              action={
-                <AIGenerateButton
-                  type="welcome"
-                  names={names}
-                  theme={data.theme}
-                  input={data.welcomeMessage}
-                  hasValue={Boolean(data.welcomeMessage)}
-                  onGenerated={(text) => {
-                    update({ welcomeMessage: text });
-                    scrollTo("welcomeMessage");
-                  }}
-                />
-              }
+          <FormField id="field-welcomeMessage" label="Welcome note">
+            <AIGenerateButton
+              type="welcome"
+              names={names}
+              theme={data.theme}
+              input={data.welcomeMessage}
+              hasValue={Boolean(data.welcomeMessage)}
+              multiline
+              onGenerated={(text) => {
+                update({ welcomeMessage: text });
+                scrollTo("welcomeMessage");
+              }}
             >
               <DebouncedTextarea
                 rows={3}
@@ -631,25 +697,39 @@ export default function EditPanel({
                 onCommit={(v) => update({ welcomeMessage: v })}
                 onFocus={() => scrollTo("welcomeMessage")}
                 placeholder="A warm message for your guests"
-                className={textareaClass}
+                className={`${textareaClass} pr-10`}
+              />
+            </AIGenerateButton>
+          </FormField>
+        );
+      case "story": {
+        const storyFormat = getTheme(data.theme).storyFormat ?? "prose";
+        if (storyFormat === "timeline") {
+          return (
+            <FormField id="field-story" label="Your story timeline">
+              <StoryTimelineEditor
+                items={data.storyTimeline ?? []}
+                onChange={(items) => {
+                  update({ storyTimeline: items });
+                  scrollTo("story");
+                }}
               />
             </FormField>
-            <FormField
-              id="field-story"
-              label="Our love story"
-              action={
-                <AIGenerateButton
-                  type="story"
-                  names={names}
-                  theme={data.theme}
-                  input={data.story}
-                  hasValue={Boolean(data.story)}
-                  onGenerated={(text) => {
-                    update({ story: text });
-                    scrollTo("story");
-                  }}
-                />
-              }
+          );
+        }
+        return (
+          <FormField id="field-story" label="Our love story">
+            <AIGenerateButton
+              type="story"
+              names={names}
+              theme={data.theme}
+              input={data.story}
+              hasValue={Boolean(data.story)}
+              multiline
+              onGenerated={(text) => {
+                update({ story: text });
+                scrollTo("story");
+              }}
             >
               <DebouncedTextarea
                 rows={5}
@@ -657,11 +737,12 @@ export default function EditPanel({
                 onCommit={(v) => update({ story: v })}
                 onFocus={() => scrollTo("story")}
                 placeholder="Share how you two met..."
-                className={textareaClass}
+                className={`${textareaClass} pr-10`}
               />
-            </FormField>
-          </>
+            </AIGenerateButton>
+          </FormField>
         );
+      }
       case "timeline":
         return (
           <FormField id="field-timeline" label="Timeline">
@@ -712,6 +793,7 @@ export default function EditPanel({
               <ImageUpload
                 label="Ending photo"
                 description="The closing photo at the bottom of your site."
+                orientationHint={getTheme(data.theme).heroOrientation ?? "landscape"}
                 value={data.closingImage}
                 onChange={(url) => {
                   update({ closingImage: url });
@@ -719,31 +801,28 @@ export default function EditPanel({
                 }}
               />
             </div>
-            <FormField
-              id="field-noteToGuests"
-              label="A note to your guests"
-              action={
-                <AIGenerateButton
-                  type="note"
-                  names={names}
-                  theme={data.theme}
-                  input={data.noteToGuests}
-                  hasValue={Boolean(data.noteToGuests)}
-                  onGenerated={(text) => {
-                    update({ noteToGuests: text });
-                    scrollTo("noteToGuests");
-                  }}
+            <FormField id="field-noteToGuests" label="A note to your guests">
+              <AIGenerateButton
+                type="note"
+                names={names}
+                theme={data.theme}
+                input={data.noteToGuests}
+                hasValue={Boolean(data.noteToGuests)}
+                multiline
+                onGenerated={(text) => {
+                  update({ noteToGuests: text });
+                  scrollTo("noteToGuests");
+                }}
+              >
+                <DebouncedTextarea
+                  rows={3}
+                  value={data.noteToGuests ?? ""}
+                  onCommit={(v) => update({ noteToGuests: v })}
+                  onFocus={() => scrollTo("noteToGuests")}
+                  placeholder="A special message from your heart"
+                  className={`${textareaClass} pr-10`}
                 />
-              }
-            >
-              <DebouncedTextarea
-                rows={3}
-                value={data.noteToGuests ?? ""}
-                onCommit={(v) => update({ noteToGuests: v })}
-                onFocus={() => scrollTo("noteToGuests")}
-                placeholder="A special message from your heart"
-                className={textareaClass}
-              />
+              </AIGenerateButton>
             </FormField>
           </>
         );
@@ -818,7 +897,7 @@ export default function EditPanel({
                 value={data.hashtag ?? ""}
                 onCommit={(v) => update({ hashtag: v })}
                 onFocus={() => scrollTo("hashtag")}
-                placeholder="#OliviaAndHenry2026"
+                placeholder="#AndreaAndMiguel2026"
                 className={inputClass}
               />
             </FormField>
@@ -877,8 +956,16 @@ export default function EditPanel({
             onStepClick={goToStep}
             steps={[
               { label: "About you", complete: step1Complete },
-              { label: "The day", complete: step2Complete },
-              { label: "Personal touches", complete: step3Complete },
+              {
+                label: "The day",
+                complete: step2Complete,
+                disabled: step2Locked,
+              },
+              {
+                label: "Customize",
+                complete: step3Complete,
+                disabled: step3Locked,
+              },
             ]}
           />
         </div>
@@ -894,41 +981,42 @@ export default function EditPanel({
           alwaysOpen
         >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField id="field-name1" label="Your name">
+            <FormField id="field-name1" label="Your name" required>
               <DebouncedInput
                 type="text"
                 value={data.name1 ?? ""}
                 onCommit={(v) => update({ name1: v })}
                 onFocus={() => scrollTo("name1")}
-                placeholder="Olivia"
+                placeholder="Andrea"
                 className={inputClass}
               />
             </FormField>
-            <FormField id="field-name2" label="Your partner's name">
+            <FormField id="field-name2" label="Your partner's name" required>
               <DebouncedInput
                 type="text"
                 value={data.name2 ?? ""}
                 onCommit={(v) => update({ name2: v })}
                 onFocus={() => scrollTo("name2")}
-                placeholder="Henry"
+                placeholder="Miguel"
                 className={inputClass}
               />
             </FormField>
           </div>
 
-          <div id="field-date">
+          <FormField id="field-date" label="Wedding date" required>
             <DatePicker
               ariaLabel="Wedding date"
               value={data.date ?? ""}
               onChange={(v) => update({ date: v })}
               onFocus={() => scrollTo("date")}
             />
-          </div>
+          </FormField>
 
           <div id="field-heroImage">
             <ImageUpload
               label="Main photo"
               description="The big one at the top of your site."
+              orientationHint={getTheme(data.theme).heroOrientation ?? "landscape"}
               value={data.heroImage}
               onChange={(url) => {
                 update({ heroImage: url });
@@ -939,29 +1027,29 @@ export default function EditPanel({
 
           <FormField
             id="field-tagline"
-            label="A few words about you two"
-            action={
-              <AIGenerateButton
-                type="tagline"
-                names={names}
-                theme={data.theme}
-                input={data.tagline}
-                hasValue={Boolean(data.tagline)}
-                onGenerated={(text) => {
-                  update({ tagline: text });
-                  scrollTo("tagline");
-                }}
-              />
-            }
+            label="Your wedding tagline"
+            helper="A short line at the top of your site. Optional."
           >
-            <DebouncedInput
-              type="text"
-              value={data.tagline ?? ""}
-              onCommit={(v) => update({ tagline: v })}
-              onFocus={() => scrollTo("tagline")}
-              placeholder="A celebration of love"
-              className={inputClass}
-            />
+            <AIGenerateButton
+              type="tagline"
+              names={names}
+              theme={data.theme}
+              input={data.tagline}
+              hasValue={Boolean(data.tagline)}
+              onGenerated={(text) => {
+                update({ tagline: text });
+                scrollTo("tagline");
+              }}
+            >
+              <DebouncedInput
+                type="text"
+                value={data.tagline ?? ""}
+                onCommit={(v) => update({ tagline: v })}
+                onFocus={() => scrollTo("tagline")}
+                placeholder="A celebration of love"
+                className={`${inputClass} pr-10`}
+              />
+            </AIGenerateButton>
           </FormField>
 
           <div className="rounded-lg border border-[#EDE8E0] bg-[#FAF7F2] px-3 py-2.5 space-y-1.5">
@@ -970,24 +1058,41 @@ export default function EditPanel({
               label="Let guests RSVP through the site"
               checked={data.rsvpEnabled ?? false}
               onChange={(v) => {
-                update({ rsvpEnabled: v });
+                // Two layers gate the RSVP preview section: presence in the
+                // active list AND rsvpEnabled. The Step 1 toggle is the
+                // single source of truth — it adds and removes the section
+                // from the active list to keep both layers in sync.
+                if (v && !activeSectionsForManager.includes("rsvp")) {
+                  update({
+                    rsvpEnabled: true,
+                    userSections: [...activeSectionsForManager, "rsvp"],
+                  });
+                } else if (
+                  !v &&
+                  activeSectionsForManager.includes("rsvp")
+                ) {
+                  update({
+                    rsvpEnabled: false,
+                    userSections: activeSectionsForManager.filter(
+                      (id) => id !== "rsvp",
+                    ),
+                  });
+                } else {
+                  update({ rsvpEnabled: v });
+                }
                 scrollTo("rsvpEnabled");
               }}
             />
             <p className="text-[11px] italic text-gray-500">
-              Fill in the details whenever you&rsquo;re ready.
+              Guests can confirm attendance directly on your site.
             </p>
           </div>
 
-          {step1Complete && (
-            <CompletionLine icon={<SparkleIcon />}>
-              Your wedding is taking shape
-            </CompletionLine>
-          )}
-
           <ContinueButton
-            label="Continue to the day"
+            label="Next: The day"
             onClick={() => goToStep(2)}
+            variant={step2Locked ? "muted" : "primary"}
+            disabled={step2Locked}
           />
         </FormSection>
         )}
@@ -1000,6 +1105,20 @@ export default function EditPanel({
           description="Where it happens, and when. Your guests will see this."
           alwaysOpen
         >
+          {!step1Complete && (
+            <div className="rounded-md border border-[#EDE8E0] bg-[#FAF7F2] px-3 py-2 text-[12px] leading-relaxed text-[#5C4F3D]">
+              Add your names and date in{" "}
+              <button
+                type="button"
+                onClick={() => goToStep(1)}
+                className="underline decoration-[#B8A48E] underline-offset-2 hover:text-[#1A1A1A]"
+              >
+                About you
+              </button>{" "}
+              so this page can show your real wedding.
+            </div>
+          )}
+
           <FormField
             id="field-ceremonyType"
             label="What kind of wedding are you having?"
@@ -1086,64 +1205,22 @@ export default function EditPanel({
             </>
           )}
 
-          {step2Complete && (
-            <CompletionLine icon={<MapPinIcon />}>
-              Venue locked in
-            </CompletionLine>
-          )}
-
           <ContinueButton
-            label="Continue to personal touches"
+            label="Next: Customize"
             onClick={() => goToStep(3)}
+            variant={step3Locked ? "muted" : "primary"}
+            disabled={step3Locked}
           />
         </FormSection>
         )}
 
-        {/* ── Step 3: Make it more personal (optional) ────────────── */}
-        {currentStep === 3 && (
-        <FormSection
-          id="step-3"
-          title="Make it more personal"
-          description="Add anything else that makes the site yours."
-          alwaysOpen
-        >
-          <SectionManager
-            activeSections={activeSectionsForManager}
-            onChange={handleSectionsChange}
-            editorFor={renderEditorFor}
-            expandedSections={expandedSections}
-            onToggleExpanded={toggleSectionExpanded}
-          />
-
-          {cta && (
-            <div className="space-y-2">
-              {cta.muted && cta.note && showCtaNote && (
-                <p className="text-[12px] italic text-[#A09580]">
-                  {cta.note}
-                </p>
-              )}
-              <ContinueButton
-                label={cta.label}
-                variant={cta.muted ? "muted" : "primary"}
-                onClick={() => {
-                  if (cta.muted && cta.note) {
-                    setShowCtaNote(true);
-                    setTimeout(() => setShowCtaNote(false), 3000);
-                  }
-                  cta.onClick();
-                }}
-              />
-            </div>
-          )}
-        </FormSection>
-        )}
-
-        {/* ── Advanced ─ visible once Step 2 has been touched OR a click-to-
-            edit targeted an Advanced field (advancedOpen forced true).
-            Renders below whichever step's tab is currently active. */}
-        {showAdvanced && (
+        {/* ── Step 3 — Theme & branding (was "Advanced") ───────────────
+            Now rendered first since theme palette + logo are the primary
+            customization. Hidden while step 3 is locked so the lock banner
+            below can do the teaching without competing chrome. */}
+        {currentStep === 3 && !step3Locked && (
           <FormSection
-            title="Advanced"
+            title="Theme & branding"
             description="Custom colors and logo image."
             open={advancedOpen}
             onToggle={(next) => setAdvancedOpen(next)}
@@ -1228,6 +1305,78 @@ export default function EditPanel({
                 }}
               />
             </div>
+          </FormSection>
+        )}
+
+        {/* ── Step 3: Customize sections + Review/Publish CTA. When step 3
+            is locked the Theme & branding panel above is hidden; this
+            panel still renders so the lock banner can do the teaching. */}
+        {currentStep === 3 && (
+          <FormSection
+            id="step-3"
+            title="Customize"
+            description="Add the optional sections that make this site yours."
+            alwaysOpen
+          >
+            {step3Locked && (
+              <div className="rounded-md border border-[#EDE8E0] bg-[#FAF7F2] px-3 py-2 text-[12px] leading-relaxed text-[#5C4F3D]">
+                {!step1Complete ? (
+                  <>
+                    Customizing comes next — first add your names and date in{" "}
+                    <button
+                      type="button"
+                      onClick={() => goToStep(1)}
+                      className="underline decoration-[#B8A48E] underline-offset-2 hover:text-[#1A1A1A]"
+                    >
+                      About you
+                    </button>
+                    .
+                  </>
+                ) : (
+                  <>
+                    Almost there — lock in your venue in{" "}
+                    <button
+                      type="button"
+                      onClick={() => goToStep(2)}
+                      className="underline decoration-[#B8A48E] underline-offset-2 hover:text-[#1A1A1A]"
+                    >
+                      The day
+                    </button>{" "}
+                    first.
+                  </>
+                )}
+              </div>
+            )}
+
+            <SectionManager
+              activeSections={activeSectionsForManager}
+              onChange={handleSectionsChange}
+              editorFor={renderEditorFor}
+              expandedSections={expandedSections}
+              onToggleExpanded={toggleSectionExpanded}
+              lockedSections={lockedManagerSections}
+            />
+
+            {cta && (
+              <div className="space-y-2">
+                {cta.muted && cta.note && showCtaNote && (
+                  <p className="text-[12px] italic text-[#A09580]">
+                    {cta.note}
+                  </p>
+                )}
+                <ContinueButton
+                  label={cta.label}
+                  variant={cta.muted ? "muted" : "primary"}
+                  onClick={() => {
+                    if (cta.muted && cta.note) {
+                      setShowCtaNote(true);
+                      setTimeout(() => setShowCtaNote(false), 3000);
+                    }
+                    cta.onClick();
+                  }}
+                />
+              </div>
+            )}
           </FormSection>
         )}
         </div>

@@ -16,6 +16,7 @@ Source: a "first-time bride-to-be" walkthrough captured 2026-04-29.
 | 6 | AI assist for chores | 1–2 days | Uses existing `/api/generate` |
 | 7 | Celebration moments | 1 day | No |
 | 8 | Mobile polish | 3–5 days | No |
+| 9 | Premium pricing UX | 1 day | None directly (front-end only; Stripe lives in [ARCHITECTURE.md](./ARCHITECTURE.md) Phase 5) |
 
 **Suggested order:** 1 → 2 → 3 → 4 ships in ~1 focused week and gives the biggest perceived improvement. 5–8 are independent — pick by what hurts most.
 
@@ -29,7 +30,7 @@ Source: a "first-time bride-to-be" walkthrough captured 2026-04-29.
 |---|---|
 | Hero image | Main photo |
 | Closing image | Ending photo |
-| Tagline | A few words about you two |
+| Tagline | Your wedding tagline |
 | Welcome message | Welcome note |
 | Note to guests | Note to your guests |
 | Travel & accommodation | How to get here |
@@ -53,8 +54,8 @@ Source: a "first-time bride-to-be" walkthrough captured 2026-04-29.
 
 - Remove Step 2 entirely.
 - The RSVP toggle moves into the bottom of Step 1, just above the Continue button: *"Show an RSVP form on the site (you can wire it up later)."*
-- Renumber: old Step 3 → Step 2 (When and where), old Step 4 → Step 3 (Make it personal).
-- StepProgress chips: **Basics / Where / Personal touches**.
+- Renumber: old Step 3 → Step 2 (When and where), old Step 4 → Step 3 (Customize).
+- StepProgress chips: **Basics / Where / Customize**.
 
 **Files:**
 - [EditPanel.tsx](src/components/edit/EditPanel.tsx) — `StepProgress` steps array, `FIELD_TO_STEP`, `STEP_TO_SECTIONS`, `STEP_TO_PREVIEW`, completion logic, `ContinueButton` labels.
@@ -63,7 +64,7 @@ Source: a "first-time bride-to-be" walkthrough captured 2026-04-29.
 
 ## Phase 3 — Step 4 inline reveal
 
-**Goal:** "Make it personal" stops looking like a checklist of 13 forms.
+**Goal:** "Customize" stops looking like a checklist of 13 forms.
 
 **Today:** SectionManager + below it, all 13 conditional editor blocks each gated on `has(sectionId)`. Adding a section reveals a far-away editor the user has to scroll to.
 
@@ -171,6 +172,31 @@ Visual polish only. Each effect should be ≤ 200 lines of CSS/animation.
 
 ---
 
+## Phase 9 — Premium pricing UX
+
+**Goal:** Make the cost of premium content honest in the editor without nagging. Couples see the price the moment they choose a premium item; the actual checkout still happens once at Publish (Phase 5 of [ARCHITECTURE.md](./ARCHITECTURE.md)).
+
+- `SectionInfo` row label shows a price pill instead of the generic gold "Premium" pill when `priceCents > 0` (e.g. **"Premium · PHP 199"**)
+- `PremiumPublishNote` (already shipped) updates copy to mention the section's specific price: *"Adds PHP 199 at publish. Watermark removal included."*
+- TemplatePicker thumbnails show price overlay on premium themes (e.g. **"PHP 999"** ribbon in the corner)
+- Step 3 CTA dynamically rolls up to **"Review & Publish · PHP 1,596"** when items in the cart; reverts to **"Review & Publish"** when nothing premium is selected
+- Editor stays unblocked — premium items are addable, droppable, swappable. The cart total is the only signal of pending cost.
+
+> **Templates drive format, fields, AND section availability.**
+> - Per-section **format variants** (gallery as `grid` vs `carousel`, story as `prose` vs `timeline`) are template-driven — the editor never grows section-format toggles.
+> - Templates can declare **custom fields** beyond core `WeddingData` (a Cinematic template might need `cinematicSubtitle`). The editor renders inputs for those dynamically via `<CustomFieldsRenderer>` + `<DynamicField>`.
+> - Templates declare which **sections they support** (derived from their `data-cwl-section` blocks). The editor's "Add more" list in Step 3 only offers sections the active template can render. Couples switching templates: sections the new template doesn't support vanish silently from the preview but data persists.
+>
+> See [TEMPLATES.md](./TEMPLATES.md) (Section availability + Custom fields subsections) and Phase 9 of [ARCHITECTURE.md](./ARCHITECTURE.md) for the architecture.
+
+**Files:**
+- [src/lib/themes.ts](src/lib/themes.ts) — replace `isPremium?: boolean` with `priceCents?: number` on `ThemeConfig` and on `SectionMeta`. Set the four current premium sections (Map 9900, Save the Date 9900, Travel 19900, Wedding Party 19900). All 17 themes leave `priceCents` undefined for v1.
+- [src/components/edit/SectionManager.tsx](src/components/edit/SectionManager.tsx) — price pill on `SectionInfo`.
+- [src/components/edit/EditPanel.tsx](src/components/edit/EditPanel.tsx) — `PremiumPublishNote` copy with price; Step 3 CTA roll-up.
+- [src/components/edit/TemplatePicker.tsx](src/components/edit/TemplatePicker.tsx) — price overlay on premium-theme thumbnails.
+
+---
+
 ## Out of scope
 
 - Multi-language editor (UI stays English; dummy data is Filipino).
@@ -189,5 +215,6 @@ Per phase:
 6. Each "Suggest" button populates rows from `/api/generate`.
 7. Step 1 completion plays ✨ once per session; preview tagline shimmers on AI return.
 8. Mobile editor scrolls smoothly with bottom-sheet drawer; iOS Safari photo upload triggers camera.
+9. Adding a premium section shows price pill on the row + price-aware note inside the expanded editor; Step 3 CTA shows running total in PHP.
 
 `npm run build` must pass after each phase.

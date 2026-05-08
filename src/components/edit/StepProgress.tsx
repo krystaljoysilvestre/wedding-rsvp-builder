@@ -5,6 +5,7 @@ import { Fragment } from "react";
 interface Step {
   label: string;
   complete: boolean;
+  disabled?: boolean;
 }
 
 interface StepProgressProps {
@@ -23,6 +24,7 @@ export default function StepProgress({
       {steps.map((step, i) => {
         const stepNumber = i + 1;
         const isActive = activeStep === stepNumber;
+        const isDisabled = Boolean(step.disabled);
         const state: "complete" | "active" | "future" = step.complete
           ? "complete"
           : isActive
@@ -43,8 +45,10 @@ export default function StepProgress({
               ? "text-[#5C4F3D]"
               : "text-[#A09580]";
 
+        const disabledOpacity = isDisabled ? "opacity-50" : "";
+
         const StepInner = (
-          <div className="flex flex-col items-center gap-1.5">
+          <div className={`flex flex-col items-center gap-1.5 ${disabledOpacity}`}>
             <div
               // The `key` flips when the chip enters "complete", remounting
               // the dot so the `step-dot-pulse` ring animation fires on
@@ -82,14 +86,24 @@ export default function StepProgress({
           </div>
         );
 
+        // Connector to the *next* chip should stay muted if either the
+        // current chip is incomplete OR the next chip is locked — the line
+        // shouldn't suggest passage to a disabled destination.
+        const nextStep = steps[i + 1];
+        const connectorMuted = !step.complete || nextStep?.disabled;
+
         return (
           <Fragment key={i}>
             {onStepClick ? (
               <button
                 type="button"
-                onClick={() => onStepClick(stepNumber)}
+                onClick={() => {
+                  if (isDisabled) return;
+                  onStepClick(stepNumber);
+                }}
                 aria-current={isActive ? "step" : undefined}
-                className="cursor-pointer"
+                aria-disabled={isDisabled || undefined}
+                className={isDisabled ? "cursor-not-allowed" : "cursor-pointer"}
               >
                 {StepInner}
               </button>
@@ -99,7 +113,7 @@ export default function StepProgress({
             {i < steps.length - 1 && (
               <div
                 className={`mx-2 mt-2.5 h-px flex-1 transition-colors duration-300 ${
-                  step.complete ? "bg-[#5C4F3D]/30" : "bg-[#E0D9CE]"
+                  connectorMuted ? "bg-[#E0D9CE]" : "bg-[#5C4F3D]/30"
                 }`}
               />
             )}

@@ -19,6 +19,7 @@ import LastSaved from "@/components/builder/LastSaved";
 import TemplatePickerButton from "@/components/builder/TemplatePickerButton";
 import OpenEditorButton from "@/components/builder/OpenEditorButton";
 import HeroSection from "./HeroSection";
+import WelcomeSection from "./WelcomeSection";
 import StorySection from "./StorySection";
 import DetailsSection from "./DetailsSection";
 import TimelineSection from "./TimelineSection";
@@ -435,6 +436,21 @@ export default function WeddingPreview({ onOpenEditor }: WeddingPreviewProps = {
         />
       </ClickToEdit>
     ),
+    welcome: (
+      <ClickToEdit
+        id="section-welcome"
+        field="welcomeMessage"
+        enabled={!demoMode}
+        active={activeSections.includes("section-welcome")}
+        onActivate={setEditTarget}
+      >
+        <WelcomeSection
+          welcomeMessage={displayData.welcomeMessage}
+          theme={theme}
+          viewport={viewport}
+        />
+      </ClickToEdit>
+    ),
     story: (
       <ClickToEdit
         id="section-story"
@@ -445,7 +461,7 @@ export default function WeddingPreview({ onOpenEditor }: WeddingPreviewProps = {
       >
         <StorySection
           story={displayData.story}
-          welcomeMessage={displayData.welcomeMessage}
+          storyTimeline={displayData.storyTimeline}
           theme={theme}
           viewport={viewport}
         />

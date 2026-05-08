@@ -28,8 +28,8 @@ import {
   type SectionTier,
 } from "@/lib/themes";
 
-// Most universal "make it personal" recommendations — shown by default in
-// the collapsed inactive list. Everything else hides behind "Show more".
+// Most universal Customize recommendations — shown by default in the
+// collapsed inactive list. Everything else hides behind "Show more".
 const PRIMARY_RECOMMENDATIONS: SectionId[] = ["story", "gallery"];
 
 interface SectionManagerProps {
@@ -41,6 +41,10 @@ interface SectionManagerProps {
   editorFor?: (id: SectionId) => ReactNode | null;
   expandedSections: Set<SectionId>;
   onToggleExpanded: (id: SectionId) => void;
+  /** Sections that are essential and cannot be removed. They can still be
+   *  reordered (drag handle stays). Removed sections may be added back via
+   *  "Add more." */
+  lockedSections?: ReadonlySet<SectionId>;
 }
 
 const ALL_SECTIONS = Object.keys(SECTION_METADATA) as SectionId[];
@@ -51,6 +55,7 @@ export default function SectionManager({
   editorFor,
   expandedSections,
   onToggleExpanded,
+  lockedSections,
 }: SectionManagerProps) {
   // Force-pin Hero to slot 0 in the rendered list.
   const heroIdx = activeSections.indexOf("hero");
@@ -134,6 +139,7 @@ export default function SectionManager({
             >
               {sortableItems.map((id) => {
                 const editor = editorFor?.(id) ?? null;
+                const locked = lockedSections?.has(id) ?? false;
                 return (
                   <SortableRow
                     key={id}
@@ -143,6 +149,7 @@ export default function SectionManager({
                     isExpanded={expandedSections.has(id)}
                     onToggleExpand={() => onToggleExpanded(id)}
                     onRemove={() => removeSection(id)}
+                    locked={locked}
                   />
                 );
               })}
@@ -154,9 +161,16 @@ export default function SectionManager({
       {/* Available to add — collapsed by default, full tier-grouped on demand */}
       {inactive.length > 0 && (
         <div className="space-y-5">
-          <p className="text-[12px] italic text-gray-500">
-            You can add or remove these anytime.
-          </p>
+          {/* Divider with a small "Add more" label so users know the row
+              of sections below is the available-to-add list, not part of
+              the active list above. */}
+          <div className="flex items-center gap-3" aria-hidden>
+            <span className="h-px flex-1 bg-[#EDE8E0]" />
+            <span className="text-[10px] font-medium uppercase tracking-[0.18em] text-[#A09580]">
+              Add more
+            </span>
+            <span className="h-px flex-1 bg-[#EDE8E0]" />
+          </div>
 
           {!showAll && primaryInactive.length > 0 && (
             <div className="space-y-1.5">
@@ -238,6 +252,7 @@ function SortableRow({
   isExpanded,
   onToggleExpand,
   onRemove,
+  locked = false,
 }: {
   id: SectionId;
   meta: SectionMeta;
@@ -245,6 +260,7 @@ function SortableRow({
   isExpanded: boolean;
   onToggleExpand: () => void;
   onRemove: () => void;
+  locked?: boolean;
 }) {
   const {
     attributes,
@@ -313,52 +329,62 @@ function SortableRow({
           <SectionInfo meta={meta} />
         )}
 
-        {hasEditor && (
-          <button
-            type="button"
-            onClick={onToggleExpand}
-            aria-label={expanded ? `Collapse ${meta.label}` : `Expand ${meta.label}`}
-            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#A09580] transition-colors hover:bg-[#FAF7F2] hover:text-[#1A1A1A]"
-          >
-            <svg
-              className="h-3.5 w-3.5 transition-transform duration-200"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-              aria-hidden
-              style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M19.5 8.25l-7.5 7.5-7.5-7.5"
-              />
-            </svg>
-          </button>
-        )}
+        {/* Right cluster: price (top) + action buttons (below). */}
+        <div className="flex shrink-0 flex-col items-center gap-1">
+          {(meta.priceCents ?? 0) > 0 && (
+            <PriceLabel priceCents={meta.priceCents!} />
+          )}
+          <div className="flex items-center">
+            {hasEditor && (
+              <button
+                type="button"
+                onClick={onToggleExpand}
+                aria-label={expanded ? `Collapse ${meta.label}` : `Expand ${meta.label}`}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-[#A09580] transition-colors hover:bg-[#FAF7F2] hover:text-[#1A1A1A]"
+              >
+                <svg
+                  className="h-3.5 w-3.5 transition-transform duration-200"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                  style={{ transform: expanded ? "rotate(180deg)" : "rotate(0deg)" }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M19.5 8.25l-7.5 7.5-7.5-7.5"
+                  />
+                </svg>
+              </button>
+            )}
 
-        <button
-          type="button"
-          onClick={onRemove}
-          aria-label={`Remove ${meta.label}`}
-          className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md text-[#A09580] transition-colors hover:bg-[#FAF7F2] hover:text-[#C53030]"
-        >
-          <svg
-            className="h-3.5 w-3.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth={2}
-            aria-hidden
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+            {!locked && (
+              <button
+                type="button"
+                onClick={onRemove}
+                aria-label={`Remove ${meta.label}`}
+                className="flex h-9 w-9 items-center justify-center rounded-md text-[#A09580] transition-colors hover:bg-[#FAF7F2] hover:text-[#C53030]"
+              >
+                <svg
+                  className="h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={2}
+                  aria-hidden
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            )}
+          </div>
+        </div>
       </div>
 
       {expanded && (
@@ -374,11 +400,17 @@ function SortableRow({
 
 function PinnedRow({ meta }: { meta: SectionMeta }) {
   return (
-    <div className="flex items-center gap-2 rounded-lg border border-[#EDE8E0] bg-white px-3 py-2.5">
-      {/* Spacer matching the drag-handle width on draggable rows so labels
-          align consistently. */}
-      <span aria-hidden className="h-7 w-5 shrink-0" />
-      <SectionInfo meta={meta} pinned />
+    <div className="flex items-center gap-2 rounded-lg border border-[#EDE8E0] bg-[#FAF7F2] px-3 py-2.5">
+      {/* Pin icon sits where the drag handle lives on sortable rows —
+          fills the alignment slot AND signals the row is pinned. */}
+      <span
+        aria-label="Pinned"
+        title="Pinned"
+        className="flex h-7 w-5 shrink-0 items-center justify-center text-[#C4917B]"
+      >
+        <PinIcon />
+      </span>
+      <SectionInfo meta={meta} />
     </div>
   );
 }
@@ -395,34 +427,33 @@ function InactiveRow({
   return (
     <div className="flex items-center gap-2 rounded-lg border border-[#EDE8E0] bg-[#FAF7F2] px-3 py-2.5">
       <SectionInfo meta={meta} />
-      <button
-        type="button"
-        onClick={onAdd}
-        className="shrink-0 rounded-full bg-[#1A1A1A] px-3 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[#2C2C2C]"
-      >
-        + Add
-      </button>
+      <div className="flex shrink-0 flex-col items-center gap-1">
+        {(meta.priceCents ?? 0) > 0 && (
+          <PriceLabel priceCents={meta.priceCents!} />
+        )}
+        <button
+          type="button"
+          onClick={onAdd}
+          className="rounded-full bg-[#1A1A1A] px-3 py-1 text-[11px] font-medium text-white transition-colors hover:bg-[#2C2C2C]"
+        >
+          + Add
+        </button>
+      </div>
     </div>
   );
 }
 
 // ─── Shared section label/description block ─────────────────────────
 
-function SectionInfo({
-  meta,
-  pinned = false,
-}: {
-  meta: SectionMeta;
-  pinned?: boolean;
-}) {
+function SectionInfo({ meta }: { meta: SectionMeta }) {
   return (
     <div className="min-w-0 flex-1">
-      <div className="flex items-center gap-1.5">
+      <div className="flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
         <span className="text-[13px] font-medium text-[#1A1A1A]">
           {meta.label}
         </span>
-        {meta.isPremium && (
-          <span className="inline-flex items-center gap-0.5 rounded-full border border-[#D4A943]/30 bg-[#FFF8E7] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-widest text-[#8B6914]">
+        {(meta.priceCents ?? 0) > 0 && (
+          <span className="inline-flex items-center gap-1 rounded-full border border-[#D4A943]/30 bg-[#FFF8E7] px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-widest text-[#8B6914]">
             <svg
               className="h-2.5 w-2.5"
               fill="currentColor"
@@ -434,14 +465,47 @@ function SectionInfo({
             Premium
           </span>
         )}
-        {pinned && (
-          <span className="text-[9px] font-medium uppercase tracking-[0.15em] text-[#A09580]">
-            · Pinned
-          </span>
-        )}
       </div>
       <p className="mt-0.5 text-[11px] text-[#8B7355]">{meta.description}</p>
     </div>
+  );
+}
+
+// Pin icon — replaces the "· Pinned" text on the Hero row. Stylized
+// thumbtack: a head sitting on top of a vertical needle.
+// Small dark-gold price label rendered above the action cluster on premium
+// rows (`+₱199` above the chevron+× on active rows; above the +Add button
+// on inactive rows). No background pill — it lives in a column with the
+// action button(s) below, so the column itself groups the elements.
+function PriceLabel({ priceCents }: { priceCents: number }) {
+  return (
+    <span
+      aria-label={`Adds ₱${priceCents / 100} at publish`}
+      className="text-[10px] text-[#1A1A1A]"
+    >
+      ₱{priceCents / 100}
+    </span>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg
+      className="h-4 w-4 -rotate-18"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      {/* head: top bar + tapered shoulders */}
+      <path d="M9 4h6" />
+      <path d="M9 4v3l-3 3v2h12v-2l-3-3V4" />
+      {/* needle */}
+      <path d="M12 12v8" />
+    </svg>
   );
 }
 

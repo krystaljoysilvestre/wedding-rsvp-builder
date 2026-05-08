@@ -252,26 +252,15 @@ select {
   transition: transform 200ms ease-out;
 }
 
-/* Step-completion line celebration — icon springs in, text follows after
-   a beat. Plays once when the line first mounts (i.e. when the step's
-   completion conditions just became satisfied). */
-@keyframes completionIconPop {
-  0%   { transform: scale(0.4) rotate(-45deg); opacity: 0; }
-  55%  { transform: scale(1.25) rotate(8deg);  opacity: 1; }
-  100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+/* AI assist action row — slides up + fades in above the wrapped input
+   when the inline AI sparkle is clicked. Short and subtle so the input
+   focus stays the priority. */
+@keyframes aiActionsIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes completionTextFade {
-  from { opacity: 0; transform: translateX(-6px); }
-  to   { opacity: 1; transform: translateX(0); }
-}
-
-.completion-icon {
-  display: inline-flex;
-  animation: completionIconPop 700ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
-}
-
-.completion-text {
-  animation: completionTextFade 500ms ease-out 180ms both;
+.ai-actions-in {
+  animation: aiActionsIn 180ms cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 

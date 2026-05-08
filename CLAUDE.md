@@ -44,7 +44,7 @@ All wedding data lives in `WeddingContext` (`src/context/WeddingContext.tsx`), a
 `src/lib/themes.ts` defines **17 themes** (romantic, elegant, minimal, cinematic, garden, modern, artdeco, boho, coastal, vintage, daisy, rustic, watercolor, tropical, whimsical, regal, industrial). Each `ThemeConfig` includes:
 - Colors, typography (font family, weight, style), ornament style, section padding, border radius, hero/closing images
 - `sections: SectionId[]` — **per-theme section curation**: which sections appear and in what order. Hero is conventionally first, Closing last; themes vary the middle. Minimal is stripped to 4 sections; Industrial leads with logistics; Cinematic puts countdown right after Hero, etc.
-- `isPremium?: boolean` — visual marker only; payment gating ships in Phase 5 of [ARCHITECTURE.md](./ARCHITECTURE.md).
+- `priceCents?: number` — per-theme price in PHP centavos. `0` or undefined = free; any positive number = premium and triggers the cart at publish. Replaces the older `isPremium?: boolean` marker. See ARCHITECTURE.md "Pricing model" for the full price table and Phase 5 for cart wiring.
 
 Google Fonts are loaded in `layout.tsx` as CSS variables (`--font-cormorant`, `--font-playfair`, `--font-inter`, `--font-cinzel`, etc.).
 
@@ -58,7 +58,7 @@ There are **16 section types** in total, all enumerated by `SectionId` in `src/l
 
 **Optional:** `gallery`, `travel`, `registry`, `faq`, `weddingParty`, `map`, `hashtag`, `saveTheDate`
 
-Each section is registered in `SECTION_METADATA` with a `label`, `description`, and optional `isPremium` flag. The metadata catalog is the source of truth for the section manager UI and any "what sections exist?" lookup.
+Each section is registered in `SECTION_METADATA` with a `label`, `description`, and optional `priceCents?: number` (PHP centavos; 0/undefined means free, positive means premium and gated at publish via the cart). The metadata catalog is the source of truth for the section manager UI and any "what sections exist?" lookup.
 
 **User-customized order:** When `data.userSections` is non-empty, it overrides the theme's default `sections` array. Hero is always force-pinned to slot 0 by the renderer regardless. Users manage this via the **SectionManager** in Step 4 of the editor (drag-to-reorder via `@dnd-kit/sortable`, plus add/remove).
 
@@ -110,7 +110,7 @@ Requires `OPENAI_API_KEY` in `.env.local` for AI features. The app works without
 
 ## Custom Skills
 
-- `/preview-section` — Scaffold a new wedding template section. After scaffolding, register the section in `SECTION_METADATA` (with `label` + `description` + optional `isPremium`), add it to `sectionsById` in `WeddingPreview.tsx`, add per-section dummy data to `SHARED_OPTIONAL_DUMMY` in `dummyData.ts`, and add an editor block in Step 4 of `EditPanel.tsx`.
+- `/preview-section` — Scaffold a new wedding template section. After scaffolding, register the section in `SECTION_METADATA` (with `label` + `description` + optional `priceCents`), add it to `sectionsById` in `WeddingPreview.tsx`, add per-section dummy data to `SHARED_OPTIONAL_DUMMY` in `dummyData.ts`, and add an editor block in Step 4 of `EditPanel.tsx`.
 - `/theme-variant` — Add a new visual theme. Includes the `sections: SectionId[]` field on `ThemeConfig` for curating which sections appear and in what order. See [TEMPLATES.md](./TEMPLATES.md) for a non-technical contributor guide.
 
 For the broader visual-collaboration playbook (briefs that work, the brief→screenshot→critique loop, add-vs-refine judgment, palette refresh), see [DESIGN.md](./DESIGN.md).

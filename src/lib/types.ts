@@ -22,6 +22,12 @@ export interface TimelineItem {
   time: string;
 }
 
+export interface StoryMilestone {
+  year: string;
+  label: string;
+  image?: string;
+}
+
 export interface WeddingColors {
   primary: string;
   accent: string;
@@ -56,6 +62,7 @@ export interface WeddingData {
   receptionAddress?: string;
   receptionTime?: string;
   story?: string;
+  storyTimeline?: StoryMilestone[];
   welcomeMessage?: string;
   rsvpEnabled?: boolean;
   timeline?: TimelineItem[];

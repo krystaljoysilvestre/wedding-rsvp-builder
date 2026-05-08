@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+
 interface TimePickerProps {
   value?: string;
   onChange: (v: string) => void;
@@ -10,6 +12,8 @@ type Period = "AM" | "PM";
 
 const HOURS = Array.from({ length: 12 }, (_, i) => i + 1);
 const MINUTES = [0, 15, 30, 45];
+
+const DEFAULT_TIME = "4:00 PM";
 
 function parseTime(s?: string): { hour: number; minute: number; period: Period } {
   const fallback = { hour: 4, minute: 0, period: "PM" as Period };
@@ -53,36 +57,12 @@ export default function TimePicker({
   onChange,
   onFocus,
 }: TimePickerProps) {
-  const isSet = Boolean(value);
-
-  if (!isSet) {
-    return (
-      <button
-        type="button"
-        onClick={() => {
-          onFocus?.();
-          onChange(formatTime(4, 0, "PM"));
-        }}
-        className="inline-flex items-center gap-1 rounded-md border border-dashed border-[#E0D9CE] bg-white px-3 py-1.5 text-[12px] font-medium text-[#5C4F3D] transition-colors hover:border-[#1A1A1A] hover:text-[#1A1A1A]"
-      >
-        <svg
-          className="h-3 w-3"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 4.5v15m7.5-7.5h-15"
-          />
-        </svg>
-        Add time
-      </button>
-    );
-  }
+  // Most Filipino weddings have a time — show the picker by default and
+  // seed a sensible 4:00 PM default if no value yet. Saves a click.
+  useEffect(() => {
+    if (!value) onChange(DEFAULT_TIME);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const parsed = parseTime(value);
 
@@ -141,27 +121,6 @@ export default function TimePicker({
           );
         })}
       </div>
-      <button
-        type="button"
-        onClick={() => onChange("")}
-        aria-label="Clear time"
-        className="ml-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-[#A09580] transition-colors hover:bg-[#FAF7F2] hover:text-[#C53030]"
-      >
-        <svg
-          className="h-3 w-3"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-          aria-hidden
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
     </div>
   );
 }

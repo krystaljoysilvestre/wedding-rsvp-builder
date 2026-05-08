@@ -5,6 +5,10 @@ interface FormFieldProps {
   children: ReactNode;
   action?: ReactNode;
   id?: string;
+  required?: boolean;
+  /** Small italic helper text rendered under the input. Use sparingly —
+   *  for fields whose purpose isn't obvious from the label alone. */
+  helper?: ReactNode;
 }
 
 export default function FormField({
@@ -12,6 +16,8 @@ export default function FormField({
   children,
   action,
   id,
+  required = false,
+  helper,
 }: FormFieldProps) {
   return (
     <div id={id}>
@@ -21,10 +27,18 @@ export default function FormField({
           style={{ color: "#5C4F3D" }}
         >
           {label}
+          {required && (
+            <span aria-hidden className="ml-0.5 text-[#C4917B]">
+              *
+            </span>
+          )}
         </label>
         {action}
       </div>
       {children}
+      {helper && (
+        <p className="mt-1.5 text-[11px] italic text-gray-500">{helper}</p>
+      )}
     </div>
   );
 }
